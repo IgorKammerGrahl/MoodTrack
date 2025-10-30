@@ -1,0 +1,42 @@
+name: moodtrack
+description: Aplicativo de acompanhamento emocional e bem-estar mental
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Ícones e UI
+  cupertino_icons: ^1.0.8
+
+  # Banco de dados local (armazenamento de preferências)
+  shared_preferences: ^2.2.2
+
+  # Gráficos e visualização de dados
+  fl_chart: ^0.65.0
+
+  # Formatação de datas e internacionalização
+  intl: ^0.18.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Caso adicione imagens, ícones ou fontes personalizadas
+  # basta descomentar e configurar as seções abaixo:
+
+  # assets:
+  #   - assets/images/
+
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: fonts/CustomFont-Regular.ttf
