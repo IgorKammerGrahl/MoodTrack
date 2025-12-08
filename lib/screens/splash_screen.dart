@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../theme/app_theme.dart';
 
 /// Splashscreen - Primeira tela do app (Stateless Widget)
 /// Exibe logo e frase motivacional por 3 segundos
@@ -18,81 +19,71 @@ class SplashScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.purple.shade400, Colors.blue.shade600],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo/Ícone do app
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Icon(
-                  Icons.psychology_outlined,
-                  size: 100,
-                  color: Colors.white,
-                ),
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo/Ícone do app
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-
-              const SizedBox(height: 30),
-
-              // Nome do app
-              const Text(
-                'MoodTrack',
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 2,
-                ),
+              child: const Icon(
+                Icons.psychology,
+                size: 80,
+                color: AppColors.primary,
               ),
+            ),
 
-              const SizedBox(height: 10),
+            const SizedBox(height: 32),
 
-              // Subtítulo
-              const Text(
-                'seu diário emocional',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white70,
-                  fontStyle: FontStyle.italic,
-                ),
+            // Nome do app
+            Text(
+              'MoodTrack',
+              style: AppTextStyles.h1.copyWith(
+                fontSize: 32,
+                color: AppColors.text,
               ),
+            ),
 
-              const SizedBox(height: 50),
+            const SizedBox(height: 8),
 
-              // Frase motivacional
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  '"Entender o que sentimos é o\nprimeiro passo para cuidar de si"',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
-                    height: 1.5,
-                  ),
+            // Subtítulo
+            Text(
+              'seu diário emocional',
+              style: AppTextStyles.body.copyWith(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+
+            const SizedBox(height: 48),
+
+            // Frase motivacional
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                '"Entender o que sentimos é o\nprimeiro passo para cuidar de si"',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body.copyWith(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
                 ),
               ),
+            ),
 
-              const SizedBox(height: 50),
+            const SizedBox(height: 48),
 
-              // Indicador de carregamento
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ],
-          ),
+            // Indicador de carregamento
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ],
         ),
       ),
     );

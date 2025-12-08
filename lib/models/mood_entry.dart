@@ -1,34 +1,59 @@
+import 'package:flutter/material.dart';
+import '../config/theme.dart';
+
 /// Classe que representa um registro de humor do usuário
 class MoodEntry {
   final String id;
   final DateTime date;
   final int moodLevel; // 1 (muito triste) a 5 (muito feliz)
   final String? note; // Anotação opcional do usuário
+  final String? aiReflection; // Reflexão gerada pela IA
+  final DateTime? reflectionGeneratedAt; // Data da geração da reflexão
+  final double? energy; // Nível de energia (1-5)
+  final double? sleep; // Horas de sono
+  final List<String>? social; // Contexto social (família, amigos, etc)
 
   MoodEntry({
     required this.id,
     required this.date,
     required this.moodLevel,
     this.note,
+    this.aiReflection,
+    this.reflectionGeneratedAt,
+    this.energy,
+    this.sleep,
+    this.social,
   });
 
-  // Converte para Map (para salvar no banco)
-  Map<String, dynamic> toMap() {
+  // Converte para Map (para salvar no banco/API)
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'date': date.toIso8601String(),
       'moodLevel': moodLevel,
       'note': note,
+      'aiReflection': aiReflection,
+      'reflectionGeneratedAt': reflectionGeneratedAt?.toIso8601String(),
+      'energy': energy,
+      'sleep': sleep,
+      'social': social,
     };
   }
 
-  // Cria MoodEntry a partir de Map (para ler do banco)
-  factory MoodEntry.fromMap(Map<String, dynamic> map) {
+  // Cria MoodEntry a partir de Map (para ler do banco/API)
+  factory MoodEntry.fromJson(Map<String, dynamic> json) {
     return MoodEntry(
-      id: map['id'],
-      date: DateTime.parse(map['date']),
-      moodLevel: map['moodLevel'],
-      note: map['note'],
+      id: json['id'] ?? '',
+      date: DateTime.parse(json['date']),
+      moodLevel: json['moodLevel'],
+      note: json['note'],
+      aiReflection: json['aiReflection'],
+      reflectionGeneratedAt: json['reflectionGeneratedAt'] != null
+          ? DateTime.parse(json['reflectionGeneratedAt'])
+          : null,
+      energy: json['energy']?.toDouble(),
+      sleep: json['sleep']?.toDouble(),
+      social: json['social'] != null ? List<String>.from(json['social']) : null,
     );
   }
 
@@ -68,21 +93,21 @@ class MoodEntry {
     }
   }
 
-  // Retorna cor baseada no humor
-  int get color {
+  // Retorna cor baseada no humor (Design System)
+  Color get color {
     switch (moodLevel) {
       case 1:
-        return 0xFF6366F1; // Roxo azulado
+        return Color(0xFFFFC1C1); // Pastel Red
       case 2:
-        return 0xFF3B82F6; // Azul
+        return Color(0xFFFFD4A3); // Pastel Orange
       case 3:
-        return 0xFF10B981; // Verde
+        return Color(0xFFE8E8E8); // Neutral Gray
       case 4:
-        return 0xFFF59E0B; // Amarelo
+        return Color(0xFFB8E6D5); // Mint Green (Soft)
       case 5:
-        return 0xFFEF4444; // Vermelho alaranjado
+        return Color(0xFFA8D5FF); // Soft Blue
       default:
-        return 0xFF10B981;
+        return AppColors.primary;
     }
   }
 }

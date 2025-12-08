@@ -21,6 +21,25 @@ dependencies:
 
   # Formatação de datas e internacionalização
   intl: ^0.18.1
+  http: ^1.6.0
+  google_fonts: ^6.3.2
+  provider: ^6.1.5+1
+  
+  # State Management
+  get: ^4.6.6
+
+  # Responsividade
+  flutter_screenutil: ^5.9.3
+
+  # Utilitários
+  connectivity_plus: ^6.0.3
+  liquid_pull_to_refresh: ^3.0.1
+  cached_network_image: ^3.3.1
+  
+  # Notificações
+  flutter_local_notifications: ^17.0.0
+  timezone: ^0.9.2
+  flutter_timezone: ^3.0.0
 
 dev_dependencies:
   flutter_test:

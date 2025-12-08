@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/mood_entry.dart';
 import '../services/database_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/mood_card.dart';
 
 /// Reflections Screen - Tela de reflexões inteligentes (Stateful Widget)
 class ReflectionsScreen extends StatefulWidget {
@@ -253,54 +255,56 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Análise Psicológica'),
+        title: Text('Análise Psicológica', style: AppTextStyles.h1),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.purple.shade400, Colors.blue.shade600],
-            ),
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            )
           : _allEntries.isEmpty
           ? _buildEmptyState()
           : RefreshIndicator(
               onRefresh: _performDeepAnalysis,
+              color: AppColors.primary,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Análise principal personalizada
                       _buildMainAnalysisCard(),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       // Insights inteligentes
                       ..._buildSmartInsights(),
 
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 32),
 
                       // Reflexões contextuais
                       Text(
                         'Reflexões para Você',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.h1.copyWith(fontSize: 20),
                       ),
 
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 16),
 
                       ..._buildContextualReflections(),
 
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 32),
 
                       // Canais de apoio (só aparece se necessário)
                       if (_analysis['needsSupport'] == true)
@@ -320,29 +324,20 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.analytics_outlined,
-              size: 80,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 20),
+            Icon(Icons.analytics_outlined, size: 80, color: Colors.grey[300]),
+            const SizedBox(height: 24),
             Text(
               'Comece sua jornada',
-              style: TextStyle(
+              style: AppTextStyles.h1.copyWith(
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
+                color: Colors.grey[600],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               'Registre seu humor por alguns dias para receber análises personalizadas e insights sobre seu bem-estar emocional.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-                height: 1.5,
-              ),
+              style: AppTextStyles.body.copyWith(color: Colors.grey[500]),
             ),
           ],
         ),
@@ -357,86 +352,68 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
 
     String mainMessage = '';
     IconData icon = Icons.psychology;
-    List<Color> gradientColors = [Colors.purple.shade300, Colors.blue.shade400];
+    Color cardColor = AppColors.primary;
 
     // Mensagem personalizada baseada em múltiplos fatores
     if (_analysis['needsSupport'] == true) {
       mainMessage =
           'Percebi que você tem enfrentado dias difíceis. Lembre-se: conversar com alguém de confiança ou um profissional pode fazer toda diferença. Você não está sozinho. 💙';
       icon = Icons.support_agent;
-      gradientColors = [Colors.blue.shade400, Colors.indigo.shade500];
+      cardColor = AppColors.accent;
     } else if (trend == 'melhorando') {
       mainMessage =
           'Que progresso incrível! Seu humor tem melhorado consistentemente. Continue cuidando de si mesmo, você está no caminho certo! 🌟';
       icon = Icons.trending_up;
-      gradientColors = [Colors.green.shade400, Colors.teal.shade500];
+      cardColor = AppColors.primary;
     } else if (trend == 'piorando' && !_analysis['needsSupport']) {
       mainMessage =
           'Notei uma queda no seu humor recentemente. Todos temos altos e baixos - que tal fazer algo que te traz alegria hoje? 🌿';
       icon = Icons.trending_down;
-      gradientColors = [Colors.orange.shade400, Colors.amber.shade500];
+      cardColor = Color(0xFFE68161);
     } else if (isStable && weekAvg >= 4) {
       mainMessage =
           'Você está mantendo um humor excelente e estável! Essa consistência mostra que você está cuidando bem de si. Parabéns! 😊';
       icon = Icons.emoji_emotions;
-      gradientColors = [Colors.pink.shade300, Colors.purple.shade400];
+      cardColor = AppColors.primary;
     } else if (isStable) {
       mainMessage =
           'Seu humor tem estado equilibrado. A estabilidade emocional é um sinal positivo de autoconhecimento e cuidado pessoal. 🧘';
       icon = Icons.balance;
+      cardColor = AppColors.secondary;
     } else {
       mainMessage =
           'Seu humor tem variado bastante. Isso é normal - somos humanos! Tente identificar o que influencia essas mudanças. 🔄';
       icon = Icons.waves;
-      gradientColors = [Colors.purple.shade300, Colors.deepPurple.shade400];
+      cardColor = AppColors.accent;
     }
 
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return MoodCard(
+      backgroundColor: cardColor,
+      border: Border.all(color: Colors.transparent),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            'Sua Análise Personalizada',
+            style: AppTextStyles.h1.copyWith(color: Colors.white, fontSize: 20),
           ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          children: [
-            Icon(icon, color: Colors.white, size: 50),
-            const SizedBox(height: 15),
-            const Text(
-              'Sua Análise Personalizada',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              mainMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                height: 1.6,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMiniStat('Média 7 dias', weekAvg.toStringAsFixed(1)),
-                _buildMiniStat('Tendência', _getTrendEmoji(trend)),
-                _buildMiniStat('Estabilidade', isStable ? '✅' : '📊'),
-              ],
-            ),
-          ],
-        ),
+          const SizedBox(height: 12),
+          Text(
+            mainMessage,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.body.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildMiniStat('Média 7 dias', weekAvg.toStringAsFixed(1)),
+              _buildMiniStat('Tendência', _getTrendEmoji(trend)),
+              _buildMiniStat('Estabilidade', isStable ? '✅' : '📊'),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -446,16 +423,15 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
       children: [
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.h1.copyWith(color: Colors.white, fontSize: 24),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+          style: AppTextStyles.body.copyWith(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 12,
+          ),
         ),
       ],
     );
@@ -485,10 +461,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           '📅 Padrão Semanal Detectado',
           'Seus $worstDay costumam ser mais desafiadores, enquanto seus $bestDay são geralmente melhores. '
               'Que tal planejar algo especial para as $worstDay?',
-          Colors.indigo,
+          AppColors.primary,
         ),
       );
-      insights.add(const SizedBox(height: 15));
+      insights.add(const SizedBox(height: 16));
     }
 
     // Insight 2: Distribuição de humor na semana
@@ -498,23 +474,23 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
       final neutralDays = _weekEntries.length - goodDays - badDays;
 
       String distributionMessage = '';
-      Color distributionColor = Colors.blue;
+      Color distributionColor = AppColors.accent;
 
       if (goodDays > badDays * 2) {
         distributionMessage =
             'Esta semana teve $goodDays dias bons contra apenas $badDays ruins. '
             'Você está cultivando um padrão positivo! Continue assim. 🌟';
-        distributionColor = Colors.green;
+        distributionColor = AppColors.primary;
       } else if (badDays > goodDays) {
         distributionMessage =
             'Esta semana teve mais dias desafiadores ($badDays) do que bons ($goodDays). '
             'Lembre-se: semanas difíceis acontecem, mas são temporárias. 💪';
-        distributionColor = Colors.orange;
+        distributionColor = Color(0xFFE68161);
       } else if (neutralDays >= _weekEntries.length * 0.6) {
         distributionMessage =
             'Sua semana foi predominantemente neutra ($neutralDays dias). '
             'Que tal buscar pequenas alegrias no dia a dia? 🌿';
-        distributionColor = Colors.teal;
+        distributionColor = AppColors.secondary;
       }
 
       if (distributionMessage.isNotEmpty) {
@@ -525,7 +501,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
             distributionColor,
           ),
         );
-        insights.add(const SizedBox(height: 15));
+        insights.add(const SizedBox(height: 16));
       }
     }
 
@@ -539,10 +515,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           '✍️ Você é um Pensador',
           'Você escreve em ${writingRate.toStringAsFixed(0)}% dos seus registros! '
               'Pesquisas mostram que a escrita reflexiva melhora significativamente o bem-estar emocional.',
-          Colors.teal,
+          AppColors.accent,
         ),
       );
-      insights.add(const SizedBox(height: 15));
+      insights.add(const SizedBox(height: 16));
     }
 
     // Insight 4: Conquista de constância
@@ -553,10 +529,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           '🏆 Conquista Desbloqueada',
           'Seu recorde é $longestStreak dias consecutivos registrando! '
               'A consistência no autoconhecimento é fundamental para o crescimento pessoal.',
-          Colors.amber.shade700,
+          Color(0xFFF4B400),
         ),
       );
-      insights.add(const SizedBox(height: 15));
+      insights.add(const SizedBox(height: 16));
     }
 
     // Insight 5: Volatilidade emocional
@@ -567,10 +543,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           '🌊 Variação Emocional',
           'Seu humor tem oscilado bastante. Isso pode indicar que fatores externos estão te afetando. '
               'Tente identificar gatilhos: sono, alimentação, eventos estressantes.',
-          Colors.deepOrange,
+          Color(0xFFE68161),
         ),
       );
-      insights.add(const SizedBox(height: 15));
+      insights.add(const SizedBox(height: 16));
     }
 
     // Insight 6: Progresso positivo
@@ -581,62 +557,50 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           '🌱 Crescimento Emocional',
           'Comparando com semanas anteriores, há uma melhora clara no seu bem-estar! '
               'O que você tem feito diferente? Continue nesse caminho.',
-          Colors.green,
+          AppColors.primary,
         ),
       );
-      insights.add(const SizedBox(height: 15));
+      insights.add(const SizedBox(height: 16));
     }
 
     return insights;
   }
 
   Widget _buildInsightCard(String title, String content, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withOpacity(0.3), width: 2),
-        ),
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.lightbulb, color: color, size: 24),
+    return MoodCard(
+      border: Border.all(color: color.withOpacity(0.3)),
+      backgroundColor: color.withOpacity(0.05),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              content,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-                height: 1.5,
+                child: Icon(Icons.lightbulb, color: color, size: 24),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            content,
+            style: AppTextStyles.body.copyWith(color: Colors.grey[700]),
+          ),
+        ],
       ),
     );
   }
@@ -655,7 +619,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           'Você está em um momento positivo. Aproveite para fortalecer hábitos saudáveis: '
               'exercícios, sono regular, conexões sociais. Momentos bons são a base para enfrentar desafios futuros.',
           'gratitude',
-          Colors.green,
+          AppColors.primary,
         ),
       );
     } else if (weekAvg < 2.5) {
@@ -667,7 +631,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
               'Comece com pequenas ações: uma caminhada de 10 minutos, ligar para um amigo, '
               'ou apenas respirar profundamente. Você tem capacidade de superar isso.',
           'selfcare',
-          Colors.blue,
+          AppColors.accent,
         ),
       );
     } else {
@@ -678,12 +642,12 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           'Você está em equilíbrio. Este é um ótimo momento para experimentar algo novo: '
               'um hobby, uma técnica de relaxamento, ou aprofundar conexões com pessoas queridas.',
           'mindfulness',
-          Colors.purple,
+          AppColors.secondary,
         ),
       );
     }
 
-    reflections.add(const SizedBox(height: 15));
+    reflections.add(const SizedBox(height: 16));
 
     // Reflexão baseada no humor mais frequente
     if (mostFrequentMood == 5) {
@@ -693,10 +657,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           'Você tem estado muito feliz! Aproveite esse momento para ajudar outros. '
               'Compartilhar alegria multiplica o bem-estar. Sua energia positiva é contagiante!',
           'gratitude',
-          Colors.pink,
+          AppColors.primary,
         ),
       );
-      reflections.add(const SizedBox(height: 15));
+      reflections.add(const SizedBox(height: 16));
     } else if (mostFrequentMood == 4) {
       reflections.add(
         _buildReflectionCard(
@@ -704,10 +668,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           'Seu humor predominante tem sido feliz. Esse é um ótimo sinal de que você está '
               'cuidando bem do seu bem-estar. Continue identificando o que te faz bem!',
           'gratitude',
-          Colors.green,
+          AppColors.primary,
         ),
       );
-      reflections.add(const SizedBox(height: 15));
+      reflections.add(const SizedBox(height: 16));
     } else if (mostFrequentMood == 3) {
       reflections.add(
         _buildReflectionCard(
@@ -715,10 +679,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
           'Você tem estado neutro com frequência. Isso pode significar estabilidade, '
               'mas também pode ser momento de buscar mais alegria. Que tal experimentar algo novo hoje?',
           'mindfulness',
-          Colors.blue,
+          AppColors.accent,
         ),
       );
-      reflections.add(const SizedBox(height: 15));
+      reflections.add(const SizedBox(height: 16));
     } else if (mostFrequentMood <= 2) {
       reflections.add(
         _buildReflectionCard(
@@ -727,10 +691,10 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
               'Considere conversar com alguém de confiança ou buscar apoio profissional. '
               'Você merece sentir-se melhor.',
           'selfcare',
-          Colors.indigo,
+          AppColors.secondary,
         ),
       );
-      reflections.add(const SizedBox(height: 15));
+      reflections.add(const SizedBox(height: 16));
     }
 
     // Reflexão sobre conexão (sempre relevante)
@@ -740,11 +704,11 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
         'Somos seres sociais. Mesmo uma breve conversa pode melhorar significativamente o humor. '
             'Que tal enviar uma mensagem carinhosa para alguém? Ou compartilhar como você está se sentindo?',
         'connection',
-        Colors.pink,
+        AppColors.secondary,
       ),
     );
 
-    reflections.add(const SizedBox(height: 15));
+    reflections.add(const SizedBox(height: 16));
 
     // Reflexão sobre mindfulness
     reflections.add(
@@ -754,7 +718,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
             'Perceba 3 coisas que você pode ouvir agora. 2 que pode sentir. 1 que pode cheirar. '
             'Este simples exercício acalma a mente e reduz ansiedade.',
         'mindfulness',
-        Colors.teal,
+        AppColors.primary,
       ),
     );
 
@@ -785,123 +749,91 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
         icon = Icons.lightbulb;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: color, size: 28),
+    return MoodCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            Text(
-              content,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey.shade700,
-                height: 1.5,
+                child: Icon(icon, color: color, size: 28),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            content,
+            style: AppTextStyles.body.copyWith(color: Colors.grey[700]),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSupportCard() {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      color: Colors.amber.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.support_agent,
-                  color: Colors.orange.shade700,
-                  size: 30,
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    '💙 Você Não Está Sozinho',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return MoodCard(
+      backgroundColor: Color(0xFFFFF0F0),
+      border: Border.all(color: Color(0xFFFF5459).withOpacity(0.3)),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFFF5459),
+                size: 32,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Precisando de Ajuda?',
+                  style: AppTextStyles.h1.copyWith(
+                    color: Color(0xFFFF5459),
+                    fontSize: 18,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            Text(
-              'Se você está passando por um momento difícil, saiba que conversar com alguém pode fazer toda diferença. '
-              'Buscar ajuda é um sinal de coragem e autocuidado.',
-              style: TextStyle(color: Colors.grey.shade700, height: 1.5),
-            ),
-            const SizedBox(height: 15),
-            _buildSupportItem(
-              '📞 CVV - 188',
-              'Centro de Valorização da Vida\n24 horas • Gratuito • Sigiloso',
-            ),
-            const Divider(height: 20),
-            _buildSupportItem(
-              '💚 CAPS',
-              'Centros de Atenção Psicossocial\nAtendimento gratuito pelo SUS',
-            ),
-            const Divider(height: 20),
-            _buildSupportItem(
-              '👨‍⚕️ Profissional',
-              'Considere conversar com um psicólogo\nA terapia pode transformar vidas',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSupportItem(String title, String description) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          description,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 14,
-            height: 1.4,
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          Text(
+            'Se você está se sentindo sobrecarregado, não hesite em buscar ajuda profissional. O CVV oferece apoio emocional gratuito 24h.',
+            style: AppTextStyles.body.copyWith(color: Colors.grey[800]),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                // Implementar chamada ou link para CVV
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFF5459),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Ligar para o CVV (188)'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
