@@ -21,7 +21,7 @@ class TimelineHorizontal extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 80.h,
+      height: 100.h,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: entries.length,

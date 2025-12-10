@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/mood_entry.dart';
 import '../models/activity_correlation.dart';
@@ -69,7 +70,7 @@ class InsightsController extends GetxController {
       _calculateEmotionalCycle(entries);
       _calculateActivityCorrelations(entries);
     } catch (e) {
-      print('Erro ao carregar insights: $e');
+      debugPrint('Erro ao carregar insights: $e');
       Get.snackbar('Erro', 'Falha ao carregar insights');
     } finally {
       isLoading.value = false;

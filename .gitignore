@@ -46,7 +46,13 @@ app.*.map.json
 node_modules/
 npm-debug.log
 yarn-error.log
-package-lock.json
+# package-lock.json should NOT be ignored in most cases to ensure consistent installs
+# package-lock.json
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
 
 # Environment variables
 .env

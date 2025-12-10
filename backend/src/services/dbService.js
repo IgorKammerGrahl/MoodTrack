@@ -1,25 +1,64 @@
-const fs = require('fs');
-const path = require('path');
-
-const DB_PATH = path.join(__dirname, '../data/moods.json');
-
-// Ensure DB file exists
-if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify([]));
-}
+const { getDB } = require('../config/db');
 
 class DBService {
-    getAll() {
-        const data = fs.readFileSync(DB_PATH);
-        return JSON.parse(data);
+    async getAll(collection, userId = null) {
+        const db = await getDB();
+
+        if (userId && collection === 'moods') {
+            return await db.all(`SELECT * FROM ${collection} WHERE userId = ?`, userId);
+        }
+
+        return await db.all(`SELECT * FROM ${collection}`);
     }
 
-    add(entry) {
-        const data = this.getAll();
-        const newEntry = { id: Date.now().toString(), date: new Date().toISOString(), ...entry };
-        data.push(newEntry);
-        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-        return newEntry;
+    async add(collection, entry) {
+        // Handle legacy call signature
+        if (typeof collection === 'object') {
+            entry = collection;
+            collection = 'moods';
+        }
+
+        const db = await getDB();
+
+        // Add default fields
+        const id = entry.id || Date.now().toString();
+
+        if (collection === 'users') {
+            const { name, email, password } = entry;
+            await db.run(
+                'INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)',
+                [id, name, email, password]
+            );
+            return { id, name, email };
+        }
+
+        if (collection === 'moods') {
+            const {
+                date, moodLevel, emoji, color, note,
+                aiReflection, reflectionGeneratedAt, userId
+            } = entry;
+
+            await db.run(
+                `INSERT INTO moods (
+                    id, date, moodLevel, emoji, color, note, 
+                    aiReflection, reflectionGeneratedAt, userId
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    id,
+                    date || new Date().toISOString(),
+                    moodLevel,
+                    emoji,
+                    color,
+                    note,
+                    aiReflection,
+                    reflectionGeneratedAt,
+                    userId
+                ]
+            );
+            return entry;
+        }
+
+        throw new Error(`Collection ${collection} not supported in SQL Service`);
     }
 }
 

@@ -9,6 +9,51 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 class EvidenceBasedAI {
 
+    async generateChatResponse(message, context = {}) {
+        // Crisis Detection in chat
+        if (this._detectCrisis(message)) {
+            return ethicsConfig.crisisResponse.message;
+        }
+
+        const contextInfo = context.recentMood
+            ? `Humor recente do usuário: ${context.recentMood}/5`
+            : '';
+
+        const prompt = `
+Você é um assistente de bem-estar emocional treinado em Terapia Cognitivo-Comportamental (TCC). Você DEVE responder em Português (pt-BR).
+
+**Contexto:**
+${contextInfo}
+- Mensagem do Usuário: "${message}"
+
+**Sua Tarefa:**
+1. Responda de forma empática e acolhedora.
+2. Use princípios da TCC quando relevante (validação emocional, reestruturação cognitiva, ações práticas).
+3. Faça perguntas reflexivas quando apropriado.
+4. Sugira micro-ações práticas quando o usuário demonstrar necessidade.
+5. NUNCA diagnostique ou use termos clínicos.
+
+**Restrições:**
+- Máximo 100 palavras.
+- Evite: "você tem depressão", "transtorno", "diagnóstico".
+- Foque em: validação, esperança realista, ações práticas.
+- Tom: conversacional, gentil, não-julgador.
+
+**Formato:**
+Responda de forma natural, como um amigo compassivo e bem informado sobre saúde mental.
+`;
+
+        try {
+            const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            return response.text();
+        } catch (error) {
+            console.error("Error generating chat response:", error);
+            return "Estou tendo dificuldades para conectar agora, mas estou aqui para ouvir. Como você está se sentindo?";
+        }
+    }
+
     async generateCBTReflection(userMoodData) {
         const { moodLevel, contextualAnswers, note } = userMoodData;
 

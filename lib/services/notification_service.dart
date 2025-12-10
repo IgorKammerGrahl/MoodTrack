@@ -40,7 +40,7 @@ class NotificationService extends GetxService {
       initializationSettings,
       onDidReceiveNotificationResponse: (details) {
         // Handle notification tap
-        print('Notification tapped: ${details.payload}');
+        debugPrint('Notification tapped: ${details.payload}');
       },
     );
   }
@@ -80,7 +80,7 @@ class NotificationService extends GetxService {
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
-    print('Daily reminder scheduled for ${time.format(Get.context!)}');
+    debugPrint('Daily reminder scheduled for ${time.format(Get.context!)}');
   }
 
   Future<void> scheduleWeeklyInsight(int dayOfWeek, TimeOfDay time) async {
@@ -105,19 +105,19 @@ class NotificationService extends GetxService {
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
     );
-    print(
+    debugPrint(
       'Weekly insight scheduled for Day $dayOfWeek at ${time.format(Get.context!)}',
     );
   }
 
   Future<void> cancelDailyReminder() async {
     await _notificationsPlugin.cancel(_dailyReminderId);
-    print('Daily reminder canceled');
+    debugPrint('Daily reminder canceled');
   }
 
   Future<void> cancelWeeklyInsight() async {
     await _notificationsPlugin.cancel(_weeklyInsightId);
-    print('Weekly insight canceled');
+    debugPrint('Weekly insight canceled');
   }
 
   tz.TZDateTime _nextInstanceOfTime(TimeOfDay time) {

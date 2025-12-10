@@ -81,7 +81,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       value: controller.dailyReminderEnabled.value,
                       onChanged: controller.toggleDailyReminder,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ),
                   Obx(() {
@@ -130,7 +130,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       value: controller.weeklyInsightEnabled.value,
                       onChanged: controller.toggleWeeklyInsight,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ),
                   Obx(() {
@@ -185,7 +185,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       value: controller.visualDifficulty.value,
                       onChanged: controller.toggleVisualDifficulty,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ),
 
@@ -232,7 +232,7 @@ class SettingsScreen extends StatelessWidget {
                       onChanged: controller.visualDifficulty.value
                           ? null
                           : controller.toggleHighContrast,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ),
 
@@ -244,7 +244,7 @@ class SettingsScreen extends StatelessWidget {
                       title: Text('Modo Escuro', style: AppTextStyles.body),
                       value: controller.isDarkMode.value,
                       onChanged: controller.toggleTheme,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ),
                 ],

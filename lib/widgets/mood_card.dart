@@ -8,13 +8,13 @@ class MoodCard extends StatelessWidget {
   final Border? border;
 
   const MoodCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
     this.onTap,
     this.backgroundColor,
     this.border,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

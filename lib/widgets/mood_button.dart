@@ -10,12 +10,12 @@ class MoodButton extends StatelessWidget {
   final bool isLoading;
 
   const MoodButton({
-    Key? key,
+    super.key,
     required this.label,
     this.onPressed,
     this.style = MoodButtonStyle.primary,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

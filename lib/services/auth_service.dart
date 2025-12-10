@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/user.dart';
 import 'api_service.dart';
@@ -21,10 +23,14 @@ class AuthService extends GetxService {
     final userStr = _storage.getUser();
 
     if (token != null && userStr != null) {
-      // TODO: Validate token expiration if needed
-      isLoggedIn.value = true;
-      // Parse user from storage (needs implementation in User model or here)
-      // For now, we assume we'd parse the JSON string
+      try {
+        final userMap = jsonDecode(userStr);
+        currentUser.value = User.fromJson(userMap);
+        isLoggedIn.value = true;
+      } catch (e) {
+        debugPrint('Erro ao restaurar usuário: $e');
+        logout();
+      }
     }
   }
 
@@ -39,7 +45,7 @@ class AuthService extends GetxService {
       final userData = response['user'];
 
       await _storage.setToken(token);
-      // await _storage.setUser(jsonEncode(userData)); // Need dart:convert
+      await _storage.setUser(jsonEncode(userData));
 
       currentUser.value = User.fromJson(userData);
       isLoggedIn.value = true;
@@ -60,6 +66,7 @@ class AuthService extends GetxService {
       final userData = response['user'];
 
       await _storage.setToken(token);
+      await _storage.setUser(jsonEncode(userData));
 
       currentUser.value = User.fromJson(userData);
       isLoggedIn.value = true;

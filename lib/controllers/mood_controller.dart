@@ -30,7 +30,7 @@ class MoodController extends GetxController {
         todayEntries.add(today);
       }
     } catch (e) {
-      print('Erro ao buscar registros de hoje: $e');
+      debugPrint('Erro ao buscar registros de hoje: $e');
     }
   }
 
@@ -39,7 +39,7 @@ class MoodController extends GetxController {
       final recent = await _db.getRecentEntries(30);
       recentEntries.assignAll(recent);
     } catch (e) {
-      print('Erro ao buscar histórico: $e');
+      debugPrint('Erro ao buscar histórico: $e');
     }
   }
 
@@ -107,7 +107,7 @@ class MoodController extends GetxController {
       await _db.saveMoodEntry(updatedEntry);
       await fetchTodayEntries(); // Update UI with reflection
     } catch (e) {
-      print('Erro ao gerar reflexão em background: $e');
+      debugPrint('Erro ao gerar reflexão em background: $e');
     }
   }
 

@@ -47,7 +47,7 @@ class AIController extends GetxController {
         history.map((json) => ChatMessage.fromJson(json)).toList(),
       );
     } catch (e) {
-      print('Erro ao carregar histórico de chat: $e');
+      debugPrint('Erro ao carregar histórico de chat: $e');
     }
   }
 
@@ -56,7 +56,7 @@ class AIController extends GetxController {
       final userId = _authService.currentUser.value?.id ?? 'guest';
       await _db.saveChatHistory(userId, messages);
     } catch (e) {
-      print('Erro ao salvar histórico de chat: $e');
+      debugPrint('Erro ao salvar histórico de chat: $e');
     }
   }
 
@@ -87,9 +87,7 @@ class AIController extends GetxController {
       return {
         'lastMood': lastEntry.moodDescription,
         'lastMoodLevel': lastEntry.moodLevel,
-        'weeklyPattern': weeklyAverage != null
-            ? weeklyAverage.toStringAsFixed(1)
-            : null,
+        'weeklyPattern': weeklyAverage?.toStringAsFixed(1),
         'instruction':
             'Responda com empatia, sem diagnosticar. Você é um assistente de suporte emocional.',
       };
@@ -125,7 +123,7 @@ class AIController extends GetxController {
       showCrisisModal.value = true;
 
       // Log crisis event
-      print('[CRISIS DETECTED] User message: $text');
+      debugPrint('[CRISIS DETECTED] User message: $text');
 
       // Add system message
       final crisisMessage = ChatMessage(
@@ -156,7 +154,7 @@ class AIController extends GetxController {
       messages.add(aiMessage);
       await _saveChatHistory();
     } catch (e) {
-      print('Erro ao enviar mensagem: $e');
+      debugPrint('Erro ao enviar mensagem: $e');
       Get.snackbar('Erro', 'Falha ao conectar com a IA');
     } finally {
       isTyping.value = false;

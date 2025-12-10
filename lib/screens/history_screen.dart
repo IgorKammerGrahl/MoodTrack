@@ -273,16 +273,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildItem(int index) {
-    if (index == 0)
+    if (index == 0) {
       return Padding(
         padding: EdgeInsets.only(bottom: 24),
         child: _buildStatsCard(),
       );
-    if (index == 1)
+    }
+    if (index == 1) {
       return Padding(
         padding: EdgeInsets.only(bottom: 32),
         child: _buildChart(),
       );
+    }
     if (index == 2) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -839,7 +841,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _confirmDelete(MoodEntry entry) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Deletar Registro', style: AppTextStyles.h1),
         content: Text(
           'Tem certeza que deseja deletar este registro? Esta ação não pode ser desfeita.',
@@ -847,15 +849,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancelar', style: TextStyle(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close bottom sheet
+              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(dialogContext); // Close bottom sheet
               await _db.deleteMoodEntry(entry.id);
               await _loadInitialData(); // Reload with current filters
+
+              if (!mounted) return;
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Registro deletado'),

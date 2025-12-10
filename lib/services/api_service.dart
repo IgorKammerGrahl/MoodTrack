@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
+import 'storage_service.dart';
 
 class ApiService {
   final String baseUrl = AppConstants.baseUrl;
@@ -10,11 +12,26 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // Headers com token (será implementado com StorageService)
-  Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  // Headers com token
+  Map<String, String> get _headers {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    try {
+      if (Get.isRegistered<StorageService>()) {
+        final token = Get.find<StorageService>().getToken();
+        if (token != null) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+      }
+    } catch (_) {
+      // Ignora erro se StorageService não estiver pronto
+    }
+
+    return headers;
+  }
 
   Future<dynamic> get(String endpoint) async {
     try {

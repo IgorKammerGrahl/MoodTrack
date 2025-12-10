@@ -429,7 +429,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
         Text(
           label,
           style: AppTextStyles.body.copyWith(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: 12,
           ),
         ),
@@ -568,8 +568,8 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
 
   Widget _buildInsightCard(String title, String content, Color color) {
     return MoodCard(
-      border: Border.all(color: color.withOpacity(0.3)),
-      backgroundColor: color.withOpacity(0.05),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
+      backgroundColor: color.withValues(alpha: 0.05),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -578,7 +578,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.lightbulb, color: color, size: 24),
@@ -758,7 +758,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -788,7 +788,7 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
   Widget _buildSupportCard() {
     return MoodCard(
       backgroundColor: Color(0xFFFFF0F0),
-      border: Border.all(color: Color(0xFFFF5459).withOpacity(0.3)),
+      border: Border.all(color: Color(0xFFFF5459).withValues(alpha: 0.3)),
       child: Column(
         children: [
           Row(

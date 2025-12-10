@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../controllers/auth_controller.dart';
 import '../../config/theme.dart';
 import '../../widgets/mood_button.dart';
-import '../../widgets/mood_card.dart';
+import '../../widgets/animated_entry.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -14,267 +14,429 @@ class AuthScreen extends StatelessWidget {
     final controller = Get.put(AuthController());
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: DefaultTabController(
-          length: 2,
-          child: Column(
-            children: [
-              SizedBox(height: 24.h),
+      // Gradient Background
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.background,
+              AppColors.primary.withValues(alpha: 0.1),
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: DefaultTabController(
+            length: 2,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 32.h),
 
-              // Header
-              Column(
-                children: [
-                  Icon(Icons.psychology, size: 48.sp, color: AppColors.primary),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'MoodTrack',
-                    style: AppTextStyles.h1.copyWith(fontSize: 24.sp),
-                  ),
-                ],
-              ),
+                      // Animated Header
+                      AnimatedEntry(
+                        delay: Duration(milliseconds: 200),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    blurRadius: 20,
+                                    offset: Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.psychology,
+                                size: 48.sp,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              'MoodTrack',
+                              style: AppTextStyles.h1.copyWith(
+                                fontSize: 28.sp,
+                                color: AppColors.primary,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              'Seu diário emocional inteligente',
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 14.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
-              SizedBox(height: 24.h),
+                      SizedBox(height: 32.h),
 
-              // Tabs
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.secondary),
-                  ),
-                  child: TabBar(
-                    indicator: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    labelColor: Colors.white,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    labelStyle: AppTextStyles.body.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    tabs: const [
-                      Tab(text: 'Entrar'),
-                      Tab(text: 'Cadastrar'),
+                      // Modern Tabs
+                      AnimatedEntry(
+                        delay: Duration(milliseconds: 400),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w),
+                          child: Container(
+                            height: 56.h,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: TabBar(
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              indicator: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              dividerColor: Colors.transparent,
+                              labelColor: Colors.white,
+                              unselectedLabelColor: AppColors.textSecondary,
+                              labelStyle: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              splashBorderRadius: BorderRadius.circular(28),
+                              tabs: const [
+                                Tab(text: 'Entrar'),
+                                Tab(text: 'Cadastrar'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 32.h),
                     ],
                   ),
                 ),
-              ),
 
-              SizedBox(height: 24.h),
+                // Tab Views (Fill remaining space)
+                SliverFillRemaining(
+                  child: TabBarView(
+                    children: [
+                      // Login Tab
+                      _buildLoginTab(context, controller),
 
-              // Tab Views
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    // Login Tab
-                    SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w),
-                      child: Column(
-                        children: [
-                          MoodCard(
-                            child: Column(
-                              children: [
-                                TextField(
-                                  controller: controller.emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  decoration: InputDecoration(
-                                    labelText: 'Email',
-                                    prefixIcon: Icon(Icons.email_outlined),
-                                  ),
-                                ),
-                                SizedBox(height: 16.h),
-                                Obx(
-                                  () => TextField(
-                                    controller: controller.passwordController,
-                                    obscureText:
-                                        !controller.isPasswordVisible.value,
-                                    decoration: InputDecoration(
-                                      labelText: 'Senha',
-                                      prefixIcon: Icon(Icons.lock_outline),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          controller.isPasswordVisible.value
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                        ),
-                                        onPressed:
-                                            controller.togglePasswordVisibility,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 24.h),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: Obx(
-                                    () => controller.isLoading.value
-                                        ? Center(
-                                            child: CircularProgressIndicator(),
-                                          )
-                                        : MoodButton(
-                                            label: 'Entrar',
-                                            onPressed: controller.login,
-                                          ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => _showForgotPasswordDialog(context),
-                            child: Text(
-                              'Esqueci a senha',
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.textSecondary,
-                                fontSize: 12.sp,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Register Tab
-                    SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w),
-                      child: Column(
-                        children: [
-                          MoodCard(
-                            child: Column(
-                              children: [
-                                TextField(
-                                  controller: controller.nameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Nome',
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                ),
-                                SizedBox(height: 16.h),
-                                TextField(
-                                  controller: controller.emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  decoration: InputDecoration(
-                                    labelText: 'Email',
-                                    prefixIcon: Icon(Icons.email_outlined),
-                                  ),
-                                ),
-                                SizedBox(height: 16.h),
-                                Obx(
-                                  () => TextField(
-                                    controller: controller.passwordController,
-                                    obscureText:
-                                        !controller.isPasswordVisible.value,
-                                    decoration: InputDecoration(
-                                      labelText: 'Senha',
-                                      prefixIcon: Icon(Icons.lock_outline),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          controller.isPasswordVisible.value
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                        ),
-                                        onPressed:
-                                            controller.togglePasswordVisibility,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 16.h),
-                                Obx(
-                                  () => TextField(
-                                    controller:
-                                        controller.confirmPasswordController,
-                                    obscureText:
-                                        !controller.isPasswordVisible.value,
-                                    decoration: InputDecoration(
-                                      labelText: 'Confirmar Senha',
-                                      prefixIcon: Icon(Icons.lock_outline),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 24.h),
-                                Row(
-                                  children: [
-                                    Obx(
-                                      () => Checkbox(
-                                        value: controller.isTermsAccepted.value,
-                                        onChanged:
-                                            controller.toggleTermsAcceptance,
-                                        activeColor: AppColors.primary,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => _showTermsModal(context),
-                                        child: Text.rich(
-                                          TextSpan(
-                                            text: 'Li e aceito os ',
-                                            style: AppTextStyles.body.copyWith(
-                                              fontSize: 12.sp,
-                                            ),
-                                            children: [
-                                              TextSpan(
-                                                text: 'Termos de Uso',
-                                                style: AppTextStyles.body
-                                                    .copyWith(
-                                                      fontSize: 12.sp,
-                                                      color: AppColors.primary,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      decoration: TextDecoration
-                                                          .underline,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 16.h),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: Obx(
-                                    () => controller.isLoading.value
-                                        ? Center(
-                                            child: CircularProgressIndicator(),
-                                          )
-                                        : MoodButton(
-                                            label: 'Cadastrar',
-                                            onPressed:
-                                                controller.isTermsAccepted.value
-                                                ? controller.register
-                                                : null,
-                                          ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Disclaimer
-              Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Text(
-                  '⚠️ Este app não substitui acompanhamento profissional.\nEm caso de crise, ligue 188 (CVV).',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body.copyWith(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                      // Register Tab
+                      _buildRegisterTab(context, controller),
+                    ],
                   ),
                 ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginTab(BuildContext context, AuthController controller) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        children: [
+          AnimatedEntry(
+            delay: Duration(milliseconds: 600),
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
               ),
-            ],
+              child: Column(
+                children: [
+                  _buildTextField(
+                    controller: controller.emailController,
+                    label: 'Email',
+                    icon: Icons.email_outlined,
+                    inputType: TextInputType.emailAddress,
+                  ),
+                  SizedBox(height: 16.h),
+                  Obx(
+                    () => _buildTextField(
+                      controller: controller.passwordController,
+                      label: 'Senha',
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      isVisible: controller.isPasswordVisible.value,
+                      onVisibilityToggle: controller.togglePasswordVisibility,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => _showForgotPasswordDialog(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Esqueci a senha',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Obx(
+                      () => controller.isLoading.value
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            )
+                          : MoodButton(
+                              label: 'Entrar',
+                              onPressed: controller.login,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 24.h),
+          _buildDisclaimer(),
+          SizedBox(height: 24.h), // Bottom padding
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegisterTab(BuildContext context, AuthController controller) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        children: [
+          AnimatedEntry(
+            delay: Duration(milliseconds: 600),
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildTextField(
+                    controller: controller.nameController,
+                    label: 'Nome',
+                    icon: Icons.person_outline,
+                  ),
+                  SizedBox(height: 16.h),
+                  _buildTextField(
+                    controller: controller.emailController,
+                    label: 'Email',
+                    icon: Icons.email_outlined,
+                    inputType: TextInputType.emailAddress,
+                  ),
+                  SizedBox(height: 16.h),
+                  Obx(
+                    () => _buildTextField(
+                      controller: controller.passwordController,
+                      label: 'Senha',
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      isVisible: controller.isPasswordVisible.value,
+                      onVisibilityToggle: controller.togglePasswordVisibility,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Obx(
+                    () => _buildTextField(
+                      controller: controller.confirmPasswordController,
+                      label: 'Confirmar Senha',
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      isVisible: controller.isPasswordVisible.value,
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                  Row(
+                    children: [
+                      SizedBox(
+                        height: 24.h,
+                        width: 24.h,
+                        child: Obx(
+                          () => Checkbox(
+                            value: controller.isTermsAccepted.value,
+                            onChanged: controller.toggleTermsAcceptance,
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _showTermsModal(context),
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'Li e aceito os ',
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 12.sp,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Termos de Uso',
+                                  style: AppTextStyles.body.copyWith(
+                                    fontSize: 12.sp,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24.h),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Obx(
+                      () => controller.isLoading.value
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            )
+                          : MoodButton(
+                              label: 'Criar conta',
+                              onPressed: controller.isTermsAccepted.value
+                                  ? controller.register
+                                  : null,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 24.h),
+          _buildDisclaimer(),
+          SizedBox(height: 24.h), // Bottom padding
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDisclaimer() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Text(
+        '⚠️ Este app não substitui acompanhamento profissional.\nEm caso de crise, ligue 188 (CVV).',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.body.copyWith(
+          fontSize: 10.sp,
+          color: AppColors.textSecondary.withValues(alpha: 0.7),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+    bool isVisible = false,
+    VoidCallback? onVisibilityToggle,
+    TextInputType inputType = TextInputType.text,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword && !isVisible,
+        keyboardType: inputType,
+        style: AppTextStyles.body,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: AppTextStyles.body.copyWith(
+            color: AppColors.textSecondary,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: AppColors.primary.withValues(alpha: 0.7),
+          ),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    isVisible ? Icons.visibility : Icons.visibility_off,
+                    color: AppColors.textSecondary,
+                  ),
+                  onPressed: onVisibilityToggle,
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
           ),
         ),
       ),
@@ -282,58 +444,103 @@ class AuthScreen extends StatelessWidget {
   }
 
   void _showTermsModal(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Termos de Uso e Privacidade', style: AppTextStyles.h1),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTermItem(
-                '⚠️ Aviso Importante',
-                'Este aplicativo NÃO substitui o acompanhamento profissional de psicólogos ou psiquiatras.',
-              ),
-              _buildTermItem(
-                '🏥 Diagnósticos',
-                'O MoodTrack não realiza diagnósticos médicos. As reflexões da IA são apenas para suporte emocional e autoconhecimento.',
-              ),
-              _buildTermItem(
-                '🆘 Em caso de crise',
-                'Se você estiver em perigo ou pensando em se machucar, ligue imediatamente para o CVV (188) ou procure um hospital.',
-              ),
-              _buildTermItem(
-                '🔒 Privacidade',
-                'Seus dados são armazenados localmente no seu dispositivo. A IA processa suas entradas de forma anônima.',
-              ),
-            ],
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Entendi', style: TextStyle(color: AppColors.primary)),
-          ),
-        ],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          children: [
+            SizedBox(height: 16.h),
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(24.w),
+              child: Text(
+                'Termos de Uso e Privacidade',
+                style: AppTextStyles.h1.copyWith(fontSize: 20.sp),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTermItem(
+                      '⚠️ Aviso Importante',
+                      'Este aplicativo NÃO substitui o acompanhamento profissional de psicólogos ou psiquiatras.',
+                    ),
+                    _buildTermItem(
+                      '🏥 Diagnósticos',
+                      'O MoodTrack não realiza diagnósticos médicos. As reflexões da IA são apenas para suporte emocional e autoconhecimento.',
+                    ),
+                    _buildTermItem(
+                      '🆘 Em caso de crise',
+                      'Se você estiver em perigo ou pensando em se machucar, ligue imediatamente para o CVV (188) ou procure um hospital.',
+                    ),
+                    _buildTermItem(
+                      '🔒 Privacidade',
+                      'Seus dados são armazenados localmente no seu dispositivo. A IA processa suas entradas de forma anônima.',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(24.w),
+              child: SizedBox(
+                width: double.infinity,
+                child: MoodButton(
+                  label: 'Entendi',
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTermItem(String title, String content) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 4),
-          Text(content, style: AppTextStyles.body.copyWith(fontSize: 14)),
-        ],
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: AppTextStyles.body.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              content,
+              style: AppTextStyles.body.copyWith(fontSize: 14.sp, height: 1.5),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -344,50 +551,63 @@ class AuthScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Recuperar Senha', style: AppTextStyles.h1),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Digite seu email para receber as instruções de recuperação.',
-              style: AppTextStyles.body,
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_reset, size: 48.sp, color: AppColors.primary),
+              SizedBox(height: 16.h),
+              Text(
+                'Recuperar Senha',
+                style: AppTextStyles.h1.copyWith(fontSize: 20.sp),
               ),
-            ),
-          ],
+              SizedBox(height: 8.h),
+              Text(
+                'Digite seu email para receber as instruções.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 14.sp,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              _buildTextField(
+                controller: emailController,
+                label: 'Email',
+                icon: Icons.email_outlined,
+                inputType: TextInputType.emailAddress,
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Cancelar',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Obx(
+                      () => MoodButton(
+                        label: 'Enviar',
+                        isLoading: controller.isLoading.value,
+                        onPressed: () =>
+                            controller.resetPassword(emailController.text),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          Obx(
-            () => TextButton(
-              onPressed: controller.isLoading.value
-                  ? null
-                  : () => controller.resetPassword(emailController.text),
-              child: controller.isLoading.value
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text('Enviar', style: TextStyle(color: AppColors.primary)),
-            ),
-          ),
-        ],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

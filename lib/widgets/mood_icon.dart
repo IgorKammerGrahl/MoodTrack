@@ -10,14 +10,14 @@ class MoodIcon extends StatelessWidget {
   final double size;
 
   const MoodIcon({
-    Key? key,
+    super.key,
     required this.emoji,
     required this.label,
     required this.isSelected,
     required this.color,
     required this.onTap,
     this.size = 48,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class MoodIcon extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: Offset(0, 4),
                   ),
