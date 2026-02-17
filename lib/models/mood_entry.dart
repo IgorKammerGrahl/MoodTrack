@@ -12,6 +12,8 @@ class MoodEntry {
   final double? energy; // Nível de energia (1-5)
   final double? sleep; // Horas de sono
   final List<String>? social; // Contexto social (família, amigos, etc)
+  final String? _storedEmoji; // Emoji armazenado (do backend ou construtor)
+  final String? _storedColor; // Cor armazenada como hex string
 
   MoodEntry({
     required this.id,
@@ -23,14 +25,18 @@ class MoodEntry {
     this.energy,
     this.sleep,
     this.social,
-  });
+    String? emoji,
+    String? colorHex,
+  })  : _storedEmoji = emoji,
+        _storedColor = colorHex;
 
   // Converte para Map (para salvar no banco/API)
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'date': date.toIso8601String(),
       'moodLevel': moodLevel,
+      'emoji': emoji,
+      'color': colorHex,
       'note': note,
       'aiReflection': aiReflection,
       'reflectionGeneratedAt': reflectionGeneratedAt?.toIso8601String(),
@@ -54,11 +60,14 @@ class MoodEntry {
       energy: json['energy']?.toDouble(),
       sleep: json['sleep']?.toDouble(),
       social: json['social'] != null ? List<String>.from(json['social']) : null,
+      emoji: json['emoji'],
+      colorHex: json['color'],
     );
   }
 
-  // Retorna emoji baseado no nível de humor
+  // Retorna emoji baseado no nível de humor (usa valor armazenado se disponível)
   String get emoji {
+    if (_storedEmoji != null) return _storedEmoji;
     switch (moodLevel) {
       case 1:
         return '😢';
@@ -90,6 +99,25 @@ class MoodEntry {
         return 'Muito Feliz';
       default:
         return 'Neutro';
+    }
+  }
+
+  // Retorna cor como hex string para serialização
+  String get colorHex {
+    if (_storedColor != null) return _storedColor;
+    switch (moodLevel) {
+      case 1:
+        return 'FFC1C1';
+      case 2:
+        return 'FFD4A3';
+      case 3:
+        return 'E8E8E8';
+      case 4:
+        return 'B8E6D5';
+      case 5:
+        return 'A8D5FF';
+      default:
+        return 'B8E6D5';
     }
   }
 

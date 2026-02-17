@@ -53,7 +53,7 @@ class MoodController extends GetxController {
     try {
       // 1. Create and save base entry immediately
       final baseEntry = MoodEntry(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: '',
         date: DateTime.now(),
         moodLevel: selectedMoodLevel.value,
         note: noteController.text,
@@ -91,7 +91,7 @@ class MoodController extends GetxController {
       // await Future.delayed(Duration(seconds: 2));
 
       final reflection = await _geminiService.getReflection(
-        baseEntry.moodDescription,
+        baseEntry.moodLevel,
         baseEntry.note ?? '',
       );
 

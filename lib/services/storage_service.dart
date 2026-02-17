@@ -31,4 +31,8 @@ class StorageService extends GetxService {
   String? getUser() {
     return _prefs.getString(AppConstants.userKey);
   }
+
+  Future<void> removeUser() async {
+    await _prefs.remove(AppConstants.userKey);
+  }
 }

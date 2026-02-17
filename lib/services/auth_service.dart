@@ -77,6 +77,7 @@ class AuthService extends GetxService {
 
   Future<void> logout() async {
     await _storage.removeToken();
+    await _storage.removeUser();
     currentUser.value = null;
     isLoggedIn.value = false;
   }

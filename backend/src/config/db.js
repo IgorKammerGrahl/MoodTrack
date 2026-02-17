@@ -5,16 +5,18 @@ const path = require('path');
 const DB_PATH = path.join(__dirname, '../../database.sqlite');
 
 let dbInstance = null;
+let dbPromise = null;
 
-async function getDB() {
-    if (dbInstance) return dbInstance;
-
-    dbInstance = await open({
+async function initDB() {
+    const db = await open({
         filename: DB_PATH,
         driver: sqlite3.Database
     });
 
-    await dbInstance.exec(`
+    // Enable foreign key enforcement
+    await db.exec('PRAGMA foreign_keys = ON;');
+
+    await db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -30,12 +32,26 @@ async function getDB() {
             color INTEGER NOT NULL,
             note TEXT,
             aiReflection TEXT,
+            reflectionStatus TEXT DEFAULT NULL,
             reflectionGeneratedAt TEXT,
-            userId TEXT
+            userId TEXT NOT NULL,
+            FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
         );
+
+        CREATE INDEX IF NOT EXISTS idx_moods_userId ON moods(userId);
+        CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     `);
 
-    return dbInstance;
+    dbInstance = db;
+    return db;
+}
+
+async function getDB() {
+    if (dbInstance) return dbInstance;
+    if (!dbPromise) {
+        dbPromise = initDB();
+    }
+    return dbPromise;
 }
 
 module.exports = { getDB };

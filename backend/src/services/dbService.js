@@ -1,14 +1,34 @@
+const crypto = require('crypto');
 const { getDB } = require('../config/db');
 
+const ALLOWED_TABLES = ['users', 'moods'];
+
 class DBService {
+    _validateTable(collection) {
+        if (!ALLOWED_TABLES.includes(collection)) {
+            throw new Error(`Invalid table: ${collection}`);
+        }
+    }
+
     async getAll(collection, userId = null) {
+        this._validateTable(collection);
         const db = await getDB();
 
         if (userId && collection === 'moods') {
-            return await db.all(`SELECT * FROM ${collection} WHERE userId = ?`, userId);
+            return db.all('SELECT * FROM moods WHERE userId = ?', userId);
         }
 
-        return await db.all(`SELECT * FROM ${collection}`);
+        return db.all(`SELECT * FROM ${collection}`);
+    }
+
+    async findUserByEmail(email) {
+        const db = await getDB();
+        return db.get('SELECT * FROM users WHERE email = ?', email);
+    }
+
+    async findUserById(id) {
+        const db = await getDB();
+        return db.get('SELECT id, name, email FROM users WHERE id = ?', id);
     }
 
     async add(collection, entry) {
@@ -18,10 +38,10 @@ class DBService {
             collection = 'moods';
         }
 
+        this._validateTable(collection);
         const db = await getDB();
 
-        // Add default fields
-        const id = entry.id || Date.now().toString();
+        const id = entry.id || crypto.randomUUID();
 
         if (collection === 'users') {
             const { name, email, password } = entry;
@@ -40,7 +60,7 @@ class DBService {
 
             await db.run(
                 `INSERT INTO moods (
-                    id, date, moodLevel, emoji, color, note, 
+                    id, date, moodLevel, emoji, color, note,
                     aiReflection, reflectionGeneratedAt, userId
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
@@ -55,10 +75,26 @@ class DBService {
                     userId
                 ]
             );
-            return entry;
+            return { id, date: date || new Date().toISOString(), moodLevel, emoji, color, note, userId };
         }
 
-        throw new Error(`Collection ${collection} not supported in SQL Service`);
+        throw new Error(`Collection ${collection} not supported`);
+    }
+
+    async updateMoodReflection(moodId, reflection, status) {
+        const db = await getDB();
+        await db.run(
+            'UPDATE moods SET aiReflection = ?, reflectionStatus = ?, reflectionGeneratedAt = ? WHERE id = ?',
+            [reflection, status, new Date().toISOString(), moodId]
+        );
+    }
+
+    async updateMoodReflectionStatus(moodId, status) {
+        const db = await getDB();
+        await db.run(
+            'UPDATE moods SET reflectionStatus = ? WHERE id = ?',
+            [status, moodId]
+        );
     }
 }
 

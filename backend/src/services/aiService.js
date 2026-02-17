@@ -1,13 +1,67 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const dotenv = require('dotenv');
 const ethicsConfig = require('../config/ethics');
 
-dotenv.config();
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama3-8b-8192';
 
 class EvidenceBasedAI {
+
+    /**
+     * Send a chat completion request to Groq.
+     * Returns the plain-text assistant response, or a fallback on any error.
+     */
+    async _callGroq(systemPrompt, userMessage, fallback) {
+        const apiKey = process.env.AI_API_KEY;
+        if (!apiKey) {
+            console.warn('AI_API_KEY is not set — skipping AI call.');
+            return fallback;
+        }
+
+        try {
+            const res = await fetch(GROQ_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: GROQ_MODEL,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userMessage },
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 512,
+                }),
+            });
+
+            if (!res.ok) {
+                const errBody = await res.text();
+                console.error(`Groq API error ${res.status}:`, errBody);
+                return fallback;
+            }
+
+            const data = await res.json();
+            const text = data?.choices?.[0]?.message?.content;
+            return text ? text.trim() : fallback;
+        } catch (error) {
+            console.error('Groq API request failed:', error.message);
+            return fallback;
+        }
+    }
+
+    // ─── Public API (signatures unchanged) ───────────────────────────
+
+    /**
+     * Adapter method called by moodController.createMood.
+     * Wraps generateCBTReflection with a simpler signature.
+     */
+    async getReflection(moodLevel, note) {
+        return this.generateCBTReflection({
+            moodLevel,
+            contextualAnswers: {},
+            note: note || '',
+        });
+    }
 
     async generateChatResponse(message, context = {}) {
         // Crisis Detection in chat
@@ -19,45 +73,38 @@ class EvidenceBasedAI {
             ? `Humor recente do usuário: ${context.recentMood}/5`
             : '';
 
-        const prompt = `
-Você é um assistente de bem-estar emocional treinado em Terapia Cognitivo-Comportamental (TCC). Você DEVE responder em Português (pt-BR).
+        const systemPrompt = `Você é um assistente de bem-estar emocional treinado em Terapia Cognitivo-Comportamental (TCC). Você DEVE responder em Português (pt-BR).
 
-**Contexto:**
-${contextInfo}
-- Mensagem do Usuário: "${message}"
-
-**Sua Tarefa:**
+Regras:
 1. Responda de forma empática e acolhedora.
 2. Use princípios da TCC quando relevante (validação emocional, reestruturação cognitiva, ações práticas).
 3. Faça perguntas reflexivas quando apropriado.
 4. Sugira micro-ações práticas quando o usuário demonstrar necessidade.
 5. NUNCA diagnostique ou use termos clínicos.
 
-**Restrições:**
+Restrições:
 - Máximo 100 palavras.
 - Evite: "você tem depressão", "transtorno", "diagnóstico".
 - Foque em: validação, esperança realista, ações práticas.
 - Tom: conversacional, gentil, não-julgador.
 
-**Formato:**
-Responda de forma natural, como um amigo compassivo e bem informado sobre saúde mental.
-`;
+Responda de forma natural, como um amigo compassivo e bem informado sobre saúde mental.`;
 
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
-        } catch (error) {
-            console.error("Error generating chat response:", error);
-            return "Estou tendo dificuldades para conectar agora, mas estou aqui para ouvir. Como você está se sentindo?";
-        }
+        const userContent = contextInfo
+            ? `${contextInfo}\n\n${message}`
+            : message;
+
+        return this._callGroq(
+            systemPrompt,
+            userContent,
+            'Estou tendo dificuldades para conectar agora, mas estou aqui para ouvir. Como você está se sentindo?'
+        );
     }
 
     async generateCBTReflection(userMoodData) {
         const { moodLevel, contextualAnswers, note } = userMoodData;
 
-        // 1. Crisis Detection
+        // Crisis Detection
         if (this._detectCrisis(note)) {
             return ethicsConfig.crisisResponse.message;
         }
@@ -65,46 +112,40 @@ Responda de forma natural, como um amigo compassivo e bem informado sobre saúde
         const domain = this._identifyPsychologicalDomain(contextualAnswers || {});
         const cbtTechnique = this._selectCBTTechnique(domain);
 
-        const prompt = `
-Você é um assistente de bem-estar emocional treinado em Terapia Cognitivo-Comportamental (TCC). Você DEVE responder em Português (pt-BR).
+        const systemPrompt = `Você é um assistente de bem-estar emocional treinado em Terapia Cognitivo-Comportamental (TCC). Você DEVE responder em Português (pt-BR).
 
-**Contexto do Usuário:**
-- Nível de Humor: ${moodLevel}/5
-- Domínio Afetado: ${domain}
-- Nota do Usuário: "${note || 'Nenhuma nota fornecida'}"
-
-**Técnica TCC Recomendada:** ${cbtTechnique.name}
-
-**Sua Tarefa:**
+Regras:
 1. Valide os sentimentos do usuário (empatia).
 2. Ofereça UMA reflexão baseada em ${cbtTechnique.name}.
 3. Sugira UMA ação concreta e pequena (micro-passo).
 4. Use linguagem acolhedora e não-julgadora.
 5. NUNCA diagnostique ou use termos clínicos.
 
-**Restrições:**
+Restrições:
 - Máximo 150 palavras.
 - Evite: "você tem depressão", "transtorno", "diagnóstico".
 - Foque em: ações práticas, validação emocional, esperança realista.
 
-**Formato da Resposta:**
+Formato da Resposta:
 💙 [Validação Empática]
 
 💡 [Reflexão TCC Específica]
 
-🌱 [Micro-ação Sugerida]
-`;
+🌱 [Micro-ação Sugerida]`;
 
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
-        } catch (error) {
-            console.error("Error generating AI content:", error);
-            return "Estou com dificuldades para conectar agora, mas lembre-se que seus sentimentos são válidos. Tente respirar fundo.";
-        }
+        const userContent = `Nível de Humor: ${moodLevel}/5
+Domínio Afetado: ${domain}
+Técnica TCC Recomendada: ${cbtTechnique.name}
+Nota do Usuário: "${note || 'Nenhuma nota fornecida'}"`;
+
+        return this._callGroq(
+            systemPrompt,
+            userContent,
+            'Estou com dificuldades para conectar agora, mas lembre-se que seus sentimentos são válidos. Tente respirar fundo.'
+        );
     }
+
+    // ─── Internal helpers (unchanged) ────────────────────────────────
 
     _detectCrisis(note) {
         if (!note) return false;

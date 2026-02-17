@@ -19,10 +19,10 @@ class GeminiService extends GetxService {
     }
   }
 
-  Future<String> getReflection(String mood, String note) async {
+  Future<String> getReflection(int moodLevel, String note) async {
     try {
       final response = await _api.post('/api/ai/reflection', {
-        'mood': mood,
+        'moodLevel': moodLevel,
         'note': note,
       });
       return response['reflection'];
