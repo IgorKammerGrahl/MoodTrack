@@ -6,10 +6,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'config/theme.dart';
 import 'services/storage_service.dart';
 import 'services/auth_service.dart';
+import 'core/network_status_service.dart';
 import 'controllers/mood_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/settings_controller.dart';
-import 'screens/home/home_screen.dart';
+import 'screens/home/main_shell.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/auth_screen.dart';
 
@@ -24,6 +25,7 @@ void main() async {
   // Initialize Services
   await Get.putAsync(() => StorageService().init());
   Get.put(AuthService());
+  Get.put(NetworkStatusService());
 
   // Initialize Controllers
   Get.put(AuthController());
@@ -72,7 +74,7 @@ class InitialScreen extends StatelessWidget {
     return GetX<AuthService>(
       builder: (auth) {
         if (auth.isLoggedIn.value) {
-          return const HomeScreen();
+          return const MainShell();
         } else {
           // Show onboarding only on first launch
           final storage = Get.find<StorageService>();

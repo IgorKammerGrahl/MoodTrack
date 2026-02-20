@@ -28,10 +28,7 @@ class AIChatScreen extends StatelessWidget {
           'Chat com IA',
           style: AppTextStyles.h1.copyWith(fontSize: 18.sp),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => Get.back(),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [

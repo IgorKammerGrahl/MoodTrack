@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/mood_entry.dart';
-import '../services/database_service.dart';
+import '../repositories/mood_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mood_card.dart';
 
@@ -14,7 +14,7 @@ class ReflectionsScreen extends StatefulWidget {
 }
 
 class _ReflectionsScreenState extends State<ReflectionsScreen> {
-  final DatabaseService _db = DatabaseService();
+  final MoodRepository _moodRepo = MoodRepository();
 
   // Dados analisados
   List<MoodEntry> _allEntries = [];
@@ -32,8 +32,8 @@ class _ReflectionsScreenState extends State<ReflectionsScreen> {
   Future<void> _performDeepAnalysis() async {
     setState(() => _isLoading = true);
 
-    final allEntries = await _db.getAllMoodEntries();
-    final weekEntries = await _db.getRecentEntries(7);
+    final allEntries = await _moodRepo.getAllMoodEntries();
+    final weekEntries = await _moodRepo.getRecentEntries(7);
 
     if (allEntries.isEmpty) {
       setState(() {

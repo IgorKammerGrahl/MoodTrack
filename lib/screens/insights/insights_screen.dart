@@ -21,10 +21,7 @@ class InsightsScreen extends StatelessWidget {
           'Insights',
           style: AppTextStyles.h1.copyWith(fontSize: 18.sp),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => Get.back(),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: Obx(() {
         if (controller.isLoading.value) {

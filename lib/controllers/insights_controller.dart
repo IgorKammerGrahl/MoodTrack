@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/mood_entry.dart';
 import '../models/activity_correlation.dart';
-import '../services/database_service.dart';
+import '../repositories/mood_repository.dart';
 
 class InsightsController extends GetxController {
-  final DatabaseService _db = DatabaseService();
+  final MoodRepository _moodRepo = MoodRepository();
 
   final RxList<MoodEntry> monthlyEntries = <MoodEntry>[].obs;
   final RxMap<int, int> moodDistribution = <int, int>{}.obs;
@@ -53,8 +53,7 @@ class InsightsController extends GetxController {
   Future<void> loadInsights() async {
     isLoading.value = true;
     try {
-      // Load last 30 days from database
-      final entries = await _db.getRecentEntries(30);
+      final entries = await _moodRepo.getRecentEntries(30);
       monthlyEntries.value = entries;
 
       if (entries.isEmpty) {
@@ -62,7 +61,6 @@ class InsightsController extends GetxController {
         return;
       }
 
-      // Calculate all insights
       _calculateDistribution(entries);
       _calculateAverageMood(entries);
       _calculateBestDayOfWeek(entries);
@@ -100,15 +98,13 @@ class InsightsController extends GetxController {
       return;
     }
 
-    // Group by weekday
     final weekdayMoods = <int, List<int>>{};
     for (var entry in entries) {
-      final weekday = entry.date.weekday; // 1 = Monday, 7 = Sunday
+      final weekday = entry.date.weekday;
       weekdayMoods[weekday] = (weekdayMoods[weekday] ?? [])
         ..add(entry.moodLevel);
     }
 
-    // Calculate average for each weekday
     double bestAverage = 0;
     int bestDay = 1;
     weekdayMoods.forEach((weekday, moods) {
@@ -138,7 +134,6 @@ class InsightsController extends GetxController {
       return;
     }
 
-    // Group by time period
     final timePeriodMoods = <String, List<int>>{
       'Manhã': [],
       'Tarde': [],
@@ -161,7 +156,6 @@ class InsightsController extends GetxController {
       timePeriodMoods[period]!.add(entry.moodLevel);
     }
 
-    // Find best period with data
     double bestAverage = 0;
     String bestPeriod = 'Manhã';
     timePeriodMoods.forEach((period, moods) {
@@ -183,10 +177,8 @@ class InsightsController extends GetxController {
       return;
     }
 
-    // Sort by date (oldest first)
     final sorted = entries.toList()..sort((a, b) => a.date.compareTo(b.date));
 
-    // Find peaks (local maxima)
     List<int> peakIndices = [];
     for (int i = 1; i < sorted.length - 1; i++) {
       if (sorted[i].moodLevel > sorted[i - 1].moodLevel &&
@@ -201,7 +193,6 @@ class InsightsController extends GetxController {
       return;
     }
 
-    // Calculate average days between peaks
     List<int> daysBetweenPeaks = [];
     for (int i = 1; i < peakIndices.length; i++) {
       final days = sorted[peakIndices[i]].date
@@ -213,7 +204,6 @@ class InsightsController extends GetxController {
     final avgCycle =
         daysBetweenPeaks.reduce((a, b) => a + b) / daysBetweenPeaks.length;
 
-    // Only report if cycle is between 3-14 days (sensible emotional cycle range)
     if (avgCycle >= 3 && avgCycle <= 14) {
       emotionalCycleDays.value = avgCycle.round();
     } else {
@@ -230,12 +220,10 @@ class InsightsController extends GetxController {
     final overallAverage = averageMood.value;
     final Map<String, List<int>> activityMoods = {};
 
-    // Group entries by activity (using canonical name)
     for (var entry in entries) {
       final note = entry.note?.toLowerCase() ?? '';
       if (note.isEmpty) continue;
 
-      // Check each keyword
       for (var keyword in _activityDefinitions.keys) {
         if (note.contains(keyword)) {
           final displayName = _activityDefinitions[keyword]!['name']!;
@@ -245,20 +233,17 @@ class InsightsController extends GetxController {
       }
     }
 
-    // Calculate correlations
     final correlations = <ActivityCorrelation>[];
 
     for (var entry in activityMoods.entries) {
       final activityName = entry.key;
       final moods = entry.value;
 
-      // Require at least 3 occurrences for statistical significance
       if (moods.length < 3) continue;
 
       final avgMood = moods.reduce((a, b) => a + b) / moods.length;
       final impact = ((avgMood - overallAverage) / overallAverage) * 100;
 
-      // Find emoji (from first matching keyword)
       String emoji = '📌';
       for (var keyword in _activityDefinitions.keys) {
         if (_activityDefinitions[keyword]!['name'] == activityName) {
@@ -279,16 +264,13 @@ class InsightsController extends GetxController {
       );
     }
 
-    // Sort by impact (highest positive first)
     correlations.sort(
       (a, b) => b.impactPercentage.compareTo(a.impactPercentage),
     );
 
-    // Take top 5
     activityCorrelations.value = correlations.take(5).toList();
   }
 
-  // Helper to get percentage for pie chart
   double getPercentage(int moodLevel) {
     final total = moodDistribution.values.fold<int>(
       0,

@@ -6,13 +6,13 @@ import '../../config/theme.dart';
 import '../../controllers/mood_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../services/auth_service.dart';
+import '../../domain/mood_question_rules.dart';
 import '../../widgets/mood_card.dart';
 import '../../widgets/mood_button.dart';
 import '../../widgets/mood_emoji_button.dart';
 import '../../widgets/timeline_horizontal.dart';
 import '../chat/ai_chat_screen.dart';
 import '../insights/insights_screen.dart';
-import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,27 +49,62 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        DateFormat(
-                          'EEEE, d MMM',
-                          'pt_BR',
-                        ).format(DateTime.now()),
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.textSecondary,
-                          fontSize: 14.sp,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat(
+                            'EEEE, d MMM',
+                            'pt_BR',
+                          ).format(DateTime.now()),
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 14.sp,
+                          ),
                         ),
-                      ),
-                      Obx(
-                        () => Text(
-                          'Olá, ${authController.userName.value.isNotEmpty ? authController.userName.value : "Visitante"}',
-                          style: AppTextStyles.h1.copyWith(fontSize: 24.sp),
+                        Obx(
+                          () => Text(
+                            'Olá, ${authController.userName.value.isNotEmpty ? authController.userName.value : "Visitante"}',
+                            style: AppTextStyles.h1.copyWith(fontSize: 24.sp),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  // Streak display
+                  Obx(() {
+                    final streak = moodController.currentStreak.value;
+                    if (streak >= 1) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('🔥', style: TextStyle(fontSize: 16.sp)),
+                            SizedBox(width: 4.w),
+                            Text(
+                              '$streak ${streak == 1 ? "dia" : "dias"}',
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                  SizedBox(width: 8.w),
                   CircleAvatar(
                     backgroundColor: AppColors.secondary,
                     child: IconButton(
@@ -95,41 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat IA',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Insights',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Ajustes'),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              // Already on Home
-              break;
-            case 1:
-              Get.to(() => const AIChatScreen());
-              break;
-            case 2:
-              Get.to(() => const InsightsScreen());
-              break;
-            case 3:
-              Get.to(() => const SettingsScreen());
-              break;
-          }
-        },
       ),
     );
   }
@@ -218,7 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ] else ...[
                 Obx(() {
                   if (moodController.isReflectionLoading.value) {
-                    // Actively polling for reflection
                     return Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -245,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   } else {
-                    // Polling finished without reflection
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: 16.h),
                       child: Text(
@@ -273,7 +271,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: MoodButton(
                 label: 'Atualizar Humor',
                 onPressed: () {
-                  // Pre-fill data
                   moodController.selectMood(latestEntry.moodLevel);
                   moodController.noteController.text = latestEntry.note ?? '';
                   setState(() => _isEditing = true);
@@ -334,8 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 () => SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment
-                        .start, // Changed to start for scrolling
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       _buildEmojiOption(
                         moodController,
@@ -382,6 +378,46 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               SizedBox(height: 24.h),
+
+              // Contextual Questions (Objective 4)
+              Obx(() {
+                final mood = moodController.selectedMoodLevel.value;
+                if (mood == 0) return const SizedBox.shrink();
+
+                final questions = MoodQuestionRules.getQuestions(mood);
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 16.h),
+                  child: Wrap(
+                    spacing: 8.w,
+                    runSpacing: 8.h,
+                    children: questions.map((q) {
+                      return ActionChip(
+                        label: Text(
+                          q,
+                          style: AppTextStyles.body.copyWith(
+                            fontSize: 12.sp,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        backgroundColor: AppColors.primary.withValues(
+                          alpha: 0.1,
+                        ),
+                        side: BorderSide(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                        onPressed: () {
+                          final current = moodController.noteController.text;
+                          if (current.isEmpty) {
+                            moodController.noteController.text = q;
+                          } else {
+                            moodController.noteController.text = '$current\n$q';
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                );
+              }),
 
               // Note Input
               TextField(

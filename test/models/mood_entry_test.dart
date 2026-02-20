@@ -47,8 +47,9 @@ void main() {
 
       final json = entry.toJson();
 
-      // id should NOT be in toJson (backend generates UUID)
-      expect(json.containsKey('id'), false);
+      // id should be in toJson
+      expect(json.containsKey('id'), true);
+      expect(json['id'], '123');
       expect(json['moodLevel'], 5);
       expect(json['note'], 'Feeling great');
       // emoji and color should be serialized

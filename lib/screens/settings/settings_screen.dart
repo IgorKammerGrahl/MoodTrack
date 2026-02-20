@@ -21,10 +21,7 @@ class SettingsScreen extends StatelessWidget {
           'Ajustes',
           style: AppTextStyles.h1.copyWith(fontSize: 18.sp),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => Get.back(),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24.w),

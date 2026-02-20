@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/auth_service.dart';
-import '../screens/home/home_screen.dart';
+import '../screens/home/main_shell.dart';
 import '../utils/validators.dart';
 
 class AuthController extends GetxController {
@@ -138,7 +138,7 @@ class AuthController extends GetxController {
     // Update userName from AuthService
     userName.value = _authService.currentUser.value?.name ?? 'Visitante';
     // Navigate to Home
-    Get.offAll(() => const HomeScreen());
+    Get.offAll(() => const MainShell());
   }
 
   void _onError(Object e) {

@@ -1,14 +1,12 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/user.dart';
 import '../controllers/mood_controller.dart';
-import 'api_service.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/mood_repository.dart';
 import 'storage_service.dart';
-import 'database_service.dart';
 
 class AuthService extends GetxService {
-  final ApiService _api = ApiService();
+  final AuthRepository _authRepo = AuthRepository();
   final StorageService _storage = Get.find<StorageService>();
 
   final Rx<User?> currentUser = Rx<User?>(null);
@@ -21,39 +19,17 @@ class AuthService extends GetxService {
   }
 
   void _loadUserFromStorage() {
-    final token = _storage.getToken();
-    final userStr = _storage.getUser();
-
-    if (token != null && userStr != null) {
-      try {
-        final userMap = jsonDecode(userStr);
-        currentUser.value = User.fromJson(userMap);
-        isLoggedIn.value = true;
-      } catch (e) {
-        debugPrint('Erro ao restaurar usuário: $e');
-        logout();
-      }
+    final user = _authRepo.loadUserFromStorage(_storage);
+    if (user != null) {
+      currentUser.value = user;
+      isLoggedIn.value = true;
     }
   }
 
   Future<void> login(String email, String password) async {
     try {
-      final response = await _api.post('/auth/login', {
-        'email': email,
-        'password': password,
-      });
-
-      final token = response['token'];
-      final userData = response['user'];
-      final refreshToken = response['refreshToken'];
-
-      await _storage.setToken(token);
-      await _storage.setUser(jsonEncode(userData));
-      if (refreshToken != null) {
-        await _storage.setRefreshToken(refreshToken);
-      }
-
-      currentUser.value = User.fromJson(userData);
+      final user = await _authRepo.login(_storage, email, password);
+      currentUser.value = user;
       isLoggedIn.value = true;
     } catch (e) {
       rethrow;
@@ -62,23 +38,8 @@ class AuthService extends GetxService {
 
   Future<void> register(String name, String email, String password) async {
     try {
-      final response = await _api.post('/auth/register', {
-        'name': name,
-        'email': email,
-        'password': password,
-      });
-
-      final token = response['token'];
-      final userData = response['user'];
-      final refreshToken = response['refreshToken'];
-
-      await _storage.setToken(token);
-      await _storage.setUser(jsonEncode(userData));
-      if (refreshToken != null) {
-        await _storage.setRefreshToken(refreshToken);
-      }
-
-      currentUser.value = User.fromJson(userData);
+      final user = await _authRepo.register(_storage, name, email, password);
+      currentUser.value = user;
       isLoggedIn.value = true;
     } catch (e) {
       rethrow;
@@ -87,12 +48,10 @@ class AuthService extends GetxService {
 
   Future<void> logout() async {
     // Clear auth credentials
-    await _storage.removeToken();
-    await _storage.removeUser();
-    await _storage.removeRefreshToken();
+    await _authRepo.clearCredentials(_storage);
 
     // Clear user-scoped local data (mood entries cache)
-    await DatabaseService().clearAllData();
+    await MoodRepository().clearAllData();
 
     // Reset reactive controller state if registered
     if (Get.isRegistered<MoodController>()) {

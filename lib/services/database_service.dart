@@ -1,185 +1,13 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
-import '../models/mood_entry.dart';
-import 'api_service.dart';
 
-/// Serviço responsável por salvar e recuperar dados localmente e sincronizar com o backend
+/// Service responsible for preferences (notifications, accessibility) and chat history.
+/// Mood CRUD, sync, and auth logic have been extracted to repositories.
 class DatabaseService {
-  static const String _keyMoodEntries = 'mood_entries';
-
-  // API Service integration
-  final ApiService _api = ApiService();
-
   // Singleton pattern
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
-
-  /// Salva um novo registro de humor (apenas 1 por dia)
-  Future<void> saveMoodEntry(MoodEntry entry) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Busca registros existentes
-    final entries = await getAllMoodEntries(forceLocal: true);
-
-    // Formata a data do novo registro (sem hora)
-    final entryDate = DateFormat('yyyy-MM-dd').format(entry.date);
-
-    // Remove qualquer registro do mesmo dia (se existir)
-    entries.removeWhere((e) {
-      final existingDate = DateFormat('yyyy-MM-dd').format(e.date);
-      return existingDate == entryDate;
-    });
-
-    // Adiciona o novo registro
-    entries.add(entry);
-
-    // Converte para JSON e salva localmente
-    final jsonList = entries.map((e) => e.toJson()).toList();
-    await prefs.setString(_keyMoodEntries, json.encode(jsonList));
-
-    // Tenta salvar no backend também
-    try {
-      await _api.post('/api/mood', entry.toJson());
-      debugPrint('Registro salvo no backend com sucesso');
-    } catch (e) {
-      debugPrint('Erro ao salvar no backend (pode estar offline): $e');
-    }
-  }
-
-  /// Deleta um registro de humor pelo ID
-  Future<void> deleteMoodEntry(String id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final entries = await getAllMoodEntries(forceLocal: true);
-
-    entries.removeWhere((e) => e.id == id);
-
-    final jsonList = entries.map((e) => e.toJson()).toList();
-    await prefs.setString(_keyMoodEntries, json.encode(jsonList));
-  }
-
-  /// Retorna todos os registros de humor
-  /// [forceLocal] se true, não tenta buscar do backend (útil para operações internas)
-  Future<List<MoodEntry>> getAllMoodEntries({bool forceLocal = false}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_keyMoodEntries);
-
-    // Lista local
-    List<MoodEntry> localEntries = [];
-    if (jsonString != null) {
-      final List<dynamic> jsonList = json.decode(jsonString);
-      localEntries = jsonList.map((json) => MoodEntry.fromJson(json)).toList();
-    }
-
-    if (forceLocal) return localEntries;
-
-    // Tenta buscar do backend para sincronizar
-    try {
-      final dynamic response = await _api.get('/api/mood');
-      if (response is List) {
-        // Mapeia resposta do backend
-        final backendEntries = response
-            .map((json) => MoodEntry.fromJson(json))
-            .toList();
-
-        // Timestamp-based merge: newer updated_at wins
-        final Map<String, MoodEntry> mergedMap = {};
-
-        for (var entry in localEntries) {
-          mergedMap[entry.id] = entry;
-        }
-
-        for (var entry in backendEntries) {
-          final existing = mergedMap[entry.id];
-          if (existing == null) {
-            mergedMap[entry.id] = entry;
-          } else if (entry.updatedAt != null && existing.updatedAt != null) {
-            // Newer timestamp wins
-            if (entry.updatedAt!.isAfter(existing.updatedAt!)) {
-              mergedMap[entry.id] = entry;
-            }
-          } else {
-            // Fallback: backend wins if no timestamps
-            mergedMap[entry.id] = entry;
-          }
-        }
-
-        final mergedList = mergedMap.values.toList();
-
-        // Always persist merged result to keep local cache in sync
-        // (e.g., backend may have added aiReflection to an existing entry)
-        final jsonList = mergedList.map((e) => e.toJson()).toList();
-        await prefs.setString(_keyMoodEntries, json.encode(jsonList));
-
-        return mergedList;
-      }
-    } catch (e) {
-      debugPrint('Erro ao buscar do backend (usando cache local): $e');
-    }
-
-    return localEntries;
-  }
-
-  /// Retorna registros dos últimos N dias
-  Future<List<MoodEntry>> getRecentEntries(int days) async {
-    final allEntries = await getAllMoodEntries();
-    final cutoffDate = DateTime.now().subtract(Duration(days: days));
-
-    return allEntries.where((entry) => entry.date.isAfter(cutoffDate)).toList()
-      ..sort((a, b) => b.date.compareTo(a.date)); // Mais recentes primeiro
-  }
-
-  /// Calcula a média de humor dos últimos N dias
-  Future<double> calculateAverageMood(int days) async {
-    final entries = await getRecentEntries(days);
-
-    if (entries.isEmpty) return 0.0;
-
-    final sum = entries.fold<int>(0, (prev, entry) => prev + entry.moodLevel);
-    return sum / entries.length;
-  }
-
-  /// Retorna o humor mais frequente dos últimos N dias
-  Future<int?> getMostFrequentMood(int days) async {
-    final entries = await getRecentEntries(days);
-
-    if (entries.isEmpty) return null;
-
-    // Conta a frequência de cada humor
-    final frequency = <int, int>{};
-    for (var entry in entries) {
-      frequency[entry.moodLevel] = (frequency[entry.moodLevel] ?? 0) + 1;
-    }
-
-    // Retorna o humor com maior frequência
-    return frequency.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-  }
-
-  /// Verifica se já existe um registro para hoje
-  Future<MoodEntry?> getTodayEntry() async {
-    final entries = await getAllMoodEntries();
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-    try {
-      return entries.firstWhere((entry) {
-        final entryDate = DateFormat('yyyy-MM-dd').format(entry.date);
-        return entryDate == today;
-      });
-    } catch (e) {
-      return null; // Não encontrou registro de hoje
-    }
-  }
-
-  /// Limpa todos os dados (útil para testes)
-  Future<void> clearAllData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyMoodEntries);
-    // Limpa também históricos de chat se houver chaves dinâmicas
-    // Nota: Isso não limpa chaves de chat específicas por usuário a menos que iteremos.
-    // Para simplificar, vamos assumir que isso é apenas para debug de humor por enquanto.
-  }
 
   // --- Notification Preferences ---
 
@@ -267,7 +95,6 @@ class DatabaseService {
     if (jsonString == null) return [];
 
     final List<dynamic> jsonList = json.decode(jsonString);
-    // Retorna a lista de mapas (JSONs), a conversão para objeto será feita no Controller/Model
     return jsonList;
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/mood_entry.dart';
-import '../services/database_service.dart';
+import '../repositories/mood_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mood_card.dart';
 
@@ -15,7 +15,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  final DatabaseService _db = DatabaseService();
+  final MoodRepository _moodRepo = MoodRepository();
   final ScrollController _scrollController = ScrollController();
 
   // Pagination
@@ -56,7 +56,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() => _isLoading = true);
 
     // 1. Load all entries from DB
-    var allEntries = await _db.getAllMoodEntries();
+    var allEntries = await _moodRepo.getAllMoodEntries();
 
     // 2. Apply Date Filter
     final now = DateTime.now();
@@ -856,7 +856,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () async {
               Navigator.pop(dialogContext); // Close dialog
               Navigator.pop(dialogContext); // Close bottom sheet
-              await _db.deleteMoodEntry(entry.id);
+              await _moodRepo.deleteMoodEntry(entry.id);
               await _loadInitialData(); // Reload with current filters
 
               if (!mounted) return;

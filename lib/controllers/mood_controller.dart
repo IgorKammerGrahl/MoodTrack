@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import '../models/mood_entry.dart';
-import '../services/database_service.dart';
+import '../repositories/mood_repository.dart';
+import '../repositories/reflection_repository.dart';
+import '../services/auth_service.dart';
 
 const _uuid = Uuid();
 
 class MoodController extends GetxController {
-  final DatabaseService _db = DatabaseService();
+  final MoodRepository _moodRepo = MoodRepository();
+  final ReflectionRepository _reflectionRepo = ReflectionRepository();
   final RxList<MoodEntry> todayEntries = <MoodEntry>[].obs;
   final RxList<MoodEntry> recentEntries = <MoodEntry>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isReflectionLoading = false.obs;
+  final RxInt currentStreak = 0.obs;
 
   // New Entry State
   final RxInt selectedMoodLevel = 0.obs;
@@ -20,13 +24,24 @@ class MoodController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _setUserScope();
     fetchTodayEntries();
     fetchRecentEntries();
   }
 
+  /// Sets user scope on the repository for per-user cache isolation.
+  void _setUserScope() {
+    try {
+      final auth = Get.find<AuthService>();
+      _moodRepo.setCurrentUserId(auth.currentUser.value?.id);
+    } catch (_) {
+      _moodRepo.setCurrentUserId(null);
+    }
+  }
+
   Future<void> fetchTodayEntries() async {
     try {
-      final today = await _db.getTodayEntry();
+      final today = await _moodRepo.getTodayEntry();
       todayEntries.clear();
       if (today != null) {
         todayEntries.add(today);
@@ -38,11 +53,56 @@ class MoodController extends GetxController {
 
   Future<void> fetchRecentEntries() async {
     try {
-      final recent = await _db.getRecentEntries(30);
+      final recent = await _moodRepo.getRecentEntries(30);
       recentEntries.assignAll(recent);
+      _updateStreak(recent);
     } catch (e) {
       debugPrint('Erro ao buscar histórico: $e');
     }
+  }
+
+  /// Compute the current daily streak from recent entries.
+  void _updateStreak(List<MoodEntry> entries) {
+    if (entries.isEmpty) {
+      currentStreak.value = 0;
+      return;
+    }
+
+    // Get unique days sorted descending
+    final uniqueDays =
+        entries
+            .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+            .toSet()
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
+
+    final today = DateTime.now();
+    final todayNorm = DateTime(today.year, today.month, today.day);
+
+    // Streak must include today or yesterday
+    if (uniqueDays.isEmpty) {
+      currentStreak.value = 0;
+      return;
+    }
+
+    final firstDay = uniqueDays.first;
+    final diffFromToday = todayNorm.difference(firstDay).inDays;
+    if (diffFromToday > 1) {
+      currentStreak.value = 0;
+      return;
+    }
+
+    int streak = 1;
+    for (int i = 1; i < uniqueDays.length; i++) {
+      final diff = uniqueDays[i - 1].difference(uniqueDays[i]).inDays;
+      if (diff == 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    currentStreak.value = streak;
   }
 
   Future<void> addEntry() async {
@@ -53,7 +113,6 @@ class MoodController extends GetxController {
 
     isLoading.value = true;
     try {
-      // 1. Create and save base entry immediately
       final baseEntry = MoodEntry(
         id: _uuid.v4(),
         date: DateTime.now(),
@@ -63,23 +122,20 @@ class MoodController extends GetxController {
 
       final isUpdate = todayEntries.isNotEmpty;
 
-      await _db.saveMoodEntry(baseEntry);
+      await _moodRepo.saveMoodEntry(baseEntry);
 
-      // 2. Update local state to show "Registered View"
       await fetchTodayEntries();
       await fetchRecentEntries();
 
-      // 3. Reset form
       selectedMoodLevel.value = 0;
       noteController.clear();
-      isLoading.value = false; // Stop loading on the form
+      isLoading.value = false;
 
       Get.snackbar(
         'Sucesso',
         isUpdate ? 'Humor atualizado!' : 'Humor registrado!',
       );
 
-      // 4. Poll for backend-generated AI reflection
       _pollForReflection();
     } catch (e) {
       isLoading.value = false;
@@ -87,28 +143,13 @@ class MoodController extends GetxController {
     }
   }
 
-  /// Polls the backend for the AI reflection that is generated server-side.
-  /// Re-fetches today's entry up to [maxAttempts] times, waiting [delay]
-  /// between each attempt, until the reflection field is populated.
-  Future<void> _pollForReflection({
-    int maxAttempts = 5,
-    Duration delay = const Duration(seconds: 3),
-  }) async {
+  /// Polls the backend for AI reflection via ReflectionRepository
+  Future<void> _pollForReflection() async {
     isReflectionLoading.value = true;
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      await Future.delayed(delay);
+    final found = await _reflectionRepo.pollForReflection();
+    if (found) {
       await fetchTodayEntries();
-
-      // Check if the reflection has arrived
-      if (todayEntries.isNotEmpty &&
-          todayEntries.first.aiReflection != null &&
-          todayEntries.first.aiReflection!.isNotEmpty) {
-        debugPrint('AI reflection received after ${attempt + 1} poll(s).');
-        isReflectionLoading.value = false;
-        return;
-      }
     }
-    debugPrint('AI reflection not received after $maxAttempts polls.');
     isReflectionLoading.value = false;
   }
 
@@ -118,7 +159,7 @@ class MoodController extends GetxController {
 
   Future<void> deleteEntry(String id) async {
     try {
-      await _db.deleteMoodEntry(id);
+      await _moodRepo.deleteMoodEntry(id);
       await fetchTodayEntries();
       await fetchRecentEntries();
       Get.snackbar('Sucesso', 'Registro removido');

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/chat_message.dart';
-import '../services/gemini_service.dart';
+import '../services/ai_service.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import 'mood_controller.dart';
 
 class AIController extends GetxController {
-  final GeminiService _geminiService = Get.put(GeminiService());
+  final AIService _aiService = Get.put(AIService());
   final DatabaseService _db = DatabaseService();
   final AuthService _authService = Get.find<AuthService>();
 
@@ -143,7 +143,7 @@ class AIController extends GetxController {
       final context = _buildUserContext();
 
       // Get AI response with context
-      final response = await _geminiService.chat(text, context: context);
+      final response = await _aiService.chat(text, context: context);
 
       final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
