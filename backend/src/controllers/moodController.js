@@ -13,7 +13,7 @@ exports.getAllMoods = async (req, res) => {
 
 exports.createMood = async (req, res) => {
     try {
-        const { moodLevel, emoji, color, note } = req.body;
+        const { id, moodLevel, emoji, color, note } = req.body;
         const userId = req.user.id;
 
         // Input validation
@@ -27,6 +27,7 @@ exports.createMood = async (req, res) => {
 
         // 1. Save Mood
         const newMood = await dbService.add('moods', {
+            id,
             moodLevel,
             emoji,
             color,

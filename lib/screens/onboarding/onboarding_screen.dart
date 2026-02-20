@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../config/theme.dart';
 import '../../widgets/mood_button.dart';
+import '../../services/storage_service.dart';
 import '../auth/auth_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -44,8 +45,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      Get.off(() => const AuthScreen());
+      _completeOnboarding();
     }
+  }
+
+  void _completeOnboarding() {
+    Get.find<StorageService>().setHasSeenOnboarding();
+    Get.off(() => const AuthScreen());
   }
 
   @override
@@ -140,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // Skip Button
             if (_currentPage < _pages.length - 1)
               TextButton(
-                onPressed: () => Get.off(() => const AuthScreen()),
+                onPressed: () => _completeOnboarding(),
                 child: Text(
                   'Pular',
                   style: AppTextStyles.body.copyWith(

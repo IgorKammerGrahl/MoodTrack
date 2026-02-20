@@ -14,6 +14,8 @@ class MoodEntry {
   final List<String>? social; // Contexto social (família, amigos, etc)
   final String? _storedEmoji; // Emoji armazenado (do backend ou construtor)
   final String? _storedColor; // Cor armazenada como hex string
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   MoodEntry({
     required this.id,
@@ -25,14 +27,17 @@ class MoodEntry {
     this.energy,
     this.sleep,
     this.social,
+    this.createdAt,
+    this.updatedAt,
     String? emoji,
     String? colorHex,
-  })  : _storedEmoji = emoji,
-        _storedColor = colorHex;
+  }) : _storedEmoji = emoji,
+       _storedColor = colorHex;
 
   // Converte para Map (para salvar no banco/API)
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'date': date.toIso8601String(),
       'moodLevel': moodLevel,
       'emoji': emoji,
@@ -43,6 +48,8 @@ class MoodEntry {
       'energy': energy,
       'sleep': sleep,
       'social': social,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
@@ -62,6 +69,12 @@ class MoodEntry {
       social: json['social'] != null ? List<String>.from(json['social']) : null,
       emoji: json['emoji'],
       colorHex: json['color'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
     );
   }
 

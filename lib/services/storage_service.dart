@@ -2,6 +2,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
 import '../config/constants.dart';
 
+const String _onboardingKey = 'has_seen_onboarding';
+const String _refreshTokenKey = 'refresh_token';
+
 class StorageService extends GetxService {
   late SharedPreferences _prefs;
 
@@ -34,5 +37,25 @@ class StorageService extends GetxService {
 
   Future<void> removeUser() async {
     await _prefs.remove(AppConstants.userKey);
+  }
+
+  // Onboarding
+  bool get hasSeenOnboarding => _prefs.getBool(_onboardingKey) ?? false;
+
+  Future<void> setHasSeenOnboarding() async {
+    await _prefs.setBool(_onboardingKey, true);
+  }
+
+  // Refresh Token
+  Future<void> setRefreshToken(String token) async {
+    await _prefs.setString(_refreshTokenKey, token);
+  }
+
+  String? getRefreshToken() {
+    return _prefs.getString(_refreshTokenKey);
+  }
+
+  Future<void> removeRefreshToken() async {
+    await _prefs.remove(_refreshTokenKey);
   }
 }

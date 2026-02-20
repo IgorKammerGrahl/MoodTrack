@@ -84,8 +84,7 @@ class DatabaseService {
             .map((json) => MoodEntry.fromJson(json))
             .toList();
 
-        // Estratégia simples de merge: Backend ganha em caso de conflitos de ID,
-        // mas aqui vamos apenas combinar e remover duplicatas por ID
+        // Timestamp-based merge: newer updated_at wins
         final Map<String, MoodEntry> mergedMap = {};
 
         for (var entry in localEntries) {
@@ -93,16 +92,26 @@ class DatabaseService {
         }
 
         for (var entry in backendEntries) {
-          mergedMap[entry.id] = entry;
+          final existing = mergedMap[entry.id];
+          if (existing == null) {
+            mergedMap[entry.id] = entry;
+          } else if (entry.updatedAt != null && existing.updatedAt != null) {
+            // Newer timestamp wins
+            if (entry.updatedAt!.isAfter(existing.updatedAt!)) {
+              mergedMap[entry.id] = entry;
+            }
+          } else {
+            // Fallback: backend wins if no timestamps
+            mergedMap[entry.id] = entry;
+          }
         }
 
         final mergedList = mergedMap.values.toList();
 
-        // Atualiza cache local se houve mudanças
-        if (mergedList.length != localEntries.length) {
-          final jsonList = mergedList.map((e) => e.toJson()).toList();
-          await prefs.setString(_keyMoodEntries, json.encode(jsonList));
-        }
+        // Always persist merged result to keep local cache in sync
+        // (e.g., backend may have added aiReflection to an existing entry)
+        final jsonList = mergedList.map((e) => e.toJson()).toList();
+        await prefs.setString(_keyMoodEntries, json.encode(jsonList));
 
         return mergedList;
       }

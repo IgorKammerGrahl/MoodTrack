@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import '../models/mood_entry.dart';
 import '../services/database_service.dart';
-import '../services/gemini_service.dart';
+
+const _uuid = Uuid();
 
 class MoodController extends GetxController {
   final DatabaseService _db = DatabaseService();
-  final GeminiService _geminiService = Get.put(GeminiService());
   final RxList<MoodEntry> todayEntries = <MoodEntry>[].obs;
   final RxList<MoodEntry> recentEntries = <MoodEntry>[].obs;
   final RxBool isLoading = false.obs;
+  final RxBool isReflectionLoading = false.obs;
 
   // New Entry State
   final RxInt selectedMoodLevel = 0.obs;
@@ -53,7 +55,7 @@ class MoodController extends GetxController {
     try {
       // 1. Create and save base entry immediately
       final baseEntry = MoodEntry(
-        id: '',
+        id: _uuid.v4(),
         date: DateTime.now(),
         moodLevel: selectedMoodLevel.value,
         note: noteController.text,
@@ -77,38 +79,37 @@ class MoodController extends GetxController {
         isUpdate ? 'Humor atualizado!' : 'Humor registrado!',
       );
 
-      // 4. Generate Reflection in background
-      _generateAndSaveReflection(baseEntry);
+      // 4. Poll for backend-generated AI reflection
+      _pollForReflection();
     } catch (e) {
       isLoading.value = false;
       Get.snackbar('Erro', 'Falha ao registrar humor');
     }
   }
 
-  Future<void> _generateAndSaveReflection(MoodEntry baseEntry) async {
-    try {
-      // Simulate network delay for effect if needed, or just call service
-      // await Future.delayed(Duration(seconds: 2));
+  /// Polls the backend for the AI reflection that is generated server-side.
+  /// Re-fetches today's entry up to [maxAttempts] times, waiting [delay]
+  /// between each attempt, until the reflection field is populated.
+  Future<void> _pollForReflection({
+    int maxAttempts = 5,
+    Duration delay = const Duration(seconds: 3),
+  }) async {
+    isReflectionLoading.value = true;
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      await Future.delayed(delay);
+      await fetchTodayEntries();
 
-      final reflection = await _geminiService.getReflection(
-        baseEntry.moodLevel,
-        baseEntry.note ?? '',
-      );
-
-      final updatedEntry = MoodEntry(
-        id: baseEntry.id,
-        date: baseEntry.date,
-        moodLevel: baseEntry.moodLevel,
-        note: baseEntry.note,
-        aiReflection: reflection,
-        reflectionGeneratedAt: DateTime.now(),
-      );
-
-      await _db.saveMoodEntry(updatedEntry);
-      await fetchTodayEntries(); // Update UI with reflection
-    } catch (e) {
-      debugPrint('Erro ao gerar reflexão em background: $e');
+      // Check if the reflection has arrived
+      if (todayEntries.isNotEmpty &&
+          todayEntries.first.aiReflection != null &&
+          todayEntries.first.aiReflection!.isNotEmpty) {
+        debugPrint('AI reflection received after ${attempt + 1} poll(s).');
+        isReflectionLoading.value = false;
+        return;
+      }
     }
+    debugPrint('AI reflection not received after $maxAttempts polls.');
+    isReflectionLoading.value = false;
   }
 
   void selectMood(int level) {

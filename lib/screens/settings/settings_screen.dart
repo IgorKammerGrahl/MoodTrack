@@ -297,8 +297,37 @@ class SettingsScreen extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  authService.logout();
-                  Get.offAllNamed('/'); // Or navigate to AuthScreen
+                  Get.dialog(
+                    AlertDialog(
+                      title: Text(
+                        'Sair da conta',
+                        style: AppTextStyles.h1.copyWith(fontSize: 18),
+                      ),
+                      content: Text(
+                        'Tem certeza que deseja sair? Seus dados locais serão mantidos.',
+                        style: AppTextStyles.body,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                            authService.logout();
+                          },
+                          child: Text(
+                            'Sair',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16.h),

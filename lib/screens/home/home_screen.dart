@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: AppColors.secondary,
                     child: IconButton(
                       icon: Icon(Icons.logout, color: AppColors.primary),
-                      onPressed: () => Get.find<AuthService>().logout(),
+                      onPressed: () => _showLogoutConfirmation(),
                     ),
                   ),
                 ],
@@ -216,31 +216,49 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ] else ...[
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
+                Obx(() {
+                  if (moodController.isReflectionLoading.value) {
+                    // Actively polling for reflection
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              'IA gerando reflexão...',
+                              style: AppTextStyles.body.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 12.sp,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          'IA gerando reflexão...',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 12.sp,
-                          ),
+                      ),
+                    );
+                  } else {
+                    // Polling finished without reflection
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      child: Text(
+                        'Reflexão indisponível no momento.',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 13.sp,
+                          fontStyle: FontStyle.italic,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
+                    );
+                  }
+                }),
               ],
             ],
           ),
@@ -446,6 +464,37 @@ class _HomeScreenState extends State<HomeScreen> {
       color: color,
       isSelected: controller.selectedMoodLevel.value == level,
       onTap: () => controller.selectMood(level),
+    );
+  }
+
+  void _showLogoutConfirmation() {
+    Get.dialog(
+      AlertDialog(
+        title: Text(
+          'Sair da conta',
+          style: AppTextStyles.h1.copyWith(fontSize: 18),
+        ),
+        content: Text(
+          'Tem certeza que deseja sair? Seus dados locais serão mantidos.',
+          style: AppTextStyles.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              Get.find<AuthService>().logout();
+            },
+            child: Text('Sair', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }

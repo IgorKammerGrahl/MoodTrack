@@ -9,8 +9,9 @@ import 'services/auth_service.dart';
 import 'controllers/mood_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/settings_controller.dart';
-import 'screens/home/home_screen.dart'; // Will be moved later
+import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/auth/auth_screen.dart';
 
 /// Função principal - Ponto de entrada do aplicativo
 void main() async {
@@ -71,9 +72,13 @@ class InitialScreen extends StatelessWidget {
     return GetX<AuthService>(
       builder: (auth) {
         if (auth.isLoggedIn.value) {
-          return const HomeScreen(); // Placeholder until refactor
+          return const HomeScreen();
         } else {
-          // Check if first time to show Onboarding (can add logic later)
+          // Show onboarding only on first launch
+          final storage = Get.find<StorageService>();
+          if (storage.hasSeenOnboarding) {
+            return const AuthScreen();
+          }
           return const OnboardingScreen();
         }
       },

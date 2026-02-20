@@ -19,18 +19,23 @@ if (!process.env.AI_API_KEY) {
 const moodRoutes = require('./routes/moodRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const authRoutes = require('./routes/authRoutes');
+const { aiLimiter, authLimiter, generalLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.use(express.json({ limit: '1mb' }));
 
-// Routes
-app.use('/auth', authRoutes);
-app.use('/api/mood', moodRoutes);
-app.use('/api/ai', aiRoutes);
+// Routes with rate limiting
+app.use('/auth', authLimiter, authRoutes);
+app.use('/api/mood', generalLimiter, moodRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
@@ -40,3 +45,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+

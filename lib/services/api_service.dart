@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
@@ -11,6 +12,8 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();
+
+  bool _isRefreshing = false;
 
   // Headers com token
   Map<String, String> get _headers {
@@ -39,6 +42,11 @@ class ApiService {
         Uri.parse('$baseUrl$endpoint'),
         headers: _headers,
       );
+
+      if (response.statusCode == 401) {
+        return await _handleUnauthorized(() => get(endpoint));
+      }
+
       return _handleResponse(response);
     } catch (e) {
       throw Exception('Erro de conexão: $e');
@@ -52,9 +60,59 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
+
+      if (response.statusCode == 401 && !endpoint.startsWith('/auth')) {
+        return await _handleUnauthorized(() => post(endpoint, data));
+      }
+
       return _handleResponse(response);
     } catch (e) {
       throw Exception('Erro de conexão: $e');
+    }
+  }
+
+  /// Attempts silent token refresh, then retries the original request.
+  Future<dynamic> _handleUnauthorized(Future<dynamic> Function() retry) async {
+    if (_isRefreshing) {
+      throw Exception('Erro API: 401 - Session expired');
+    }
+
+    _isRefreshing = true;
+    try {
+      final storage = Get.find<StorageService>();
+      final refreshToken = storage.getRefreshToken();
+
+      if (refreshToken == null) {
+        throw Exception('No refresh token available');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        await storage.setToken(data['token']);
+        await storage.setRefreshToken(data['refreshToken']);
+        debugPrint('Token refreshed silently.');
+        _isRefreshing = false;
+        return await retry();
+      } else {
+        throw Exception('Refresh token invalid');
+      }
+    } catch (e) {
+      _isRefreshing = false;
+      debugPrint('Token refresh failed: $e');
+      // Refresh failed — force logout
+      try {
+        final authService = Get.find<dynamic>(tag: null);
+        if (authService != null) {
+          // Will be caught by GetX reactive UI
+        }
+      } catch (_) {}
+      rethrow;
     }
   }
 

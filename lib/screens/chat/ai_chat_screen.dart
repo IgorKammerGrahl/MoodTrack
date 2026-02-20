@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../controllers/ai_controller.dart';
 import '../../widgets/mood_card.dart';
@@ -199,7 +200,23 @@ class AIChatScreen extends StatelessWidget {
                 ),
                 subtitle: Text('188 - Disponível 24h'),
                 onTap: () {
-                  // Implement call logic (url_launcher)
+                  launchUrl(Uri(scheme: 'tel', path: '188'));
+                  Get.back();
+                },
+              ),
+            ),
+            SizedBox(height: 12.h),
+            MoodCard(
+              backgroundColor: Color(0xFFFFE5E5),
+              child: ListTile(
+                leading: Icon(Icons.local_hospital, color: Colors.red),
+                title: Text(
+                  'Ligar para o SAMU',
+                  style: AppTextStyles.h1.copyWith(fontSize: 16),
+                ),
+                subtitle: Text('192 - Emergências'),
+                onTap: () {
+                  launchUrl(Uri(scheme: 'tel', path: '192'));
                   Get.back();
                 },
               ),

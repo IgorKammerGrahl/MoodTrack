@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/user.dart';
+import '../controllers/mood_controller.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
+import 'database_service.dart';
 
 class AuthService extends GetxService {
   final ApiService _api = ApiService();
@@ -43,9 +45,13 @@ class AuthService extends GetxService {
 
       final token = response['token'];
       final userData = response['user'];
+      final refreshToken = response['refreshToken'];
 
       await _storage.setToken(token);
       await _storage.setUser(jsonEncode(userData));
+      if (refreshToken != null) {
+        await _storage.setRefreshToken(refreshToken);
+      }
 
       currentUser.value = User.fromJson(userData);
       isLoggedIn.value = true;
@@ -64,9 +70,13 @@ class AuthService extends GetxService {
 
       final token = response['token'];
       final userData = response['user'];
+      final refreshToken = response['refreshToken'];
 
       await _storage.setToken(token);
       await _storage.setUser(jsonEncode(userData));
+      if (refreshToken != null) {
+        await _storage.setRefreshToken(refreshToken);
+      }
 
       currentUser.value = User.fromJson(userData);
       isLoggedIn.value = true;
@@ -76,8 +86,22 @@ class AuthService extends GetxService {
   }
 
   Future<void> logout() async {
+    // Clear auth credentials
     await _storage.removeToken();
     await _storage.removeUser();
+    await _storage.removeRefreshToken();
+
+    // Clear user-scoped local data (mood entries cache)
+    await DatabaseService().clearAllData();
+
+    // Reset reactive controller state if registered
+    if (Get.isRegistered<MoodController>()) {
+      final mc = Get.find<MoodController>();
+      mc.todayEntries.clear();
+      mc.recentEntries.clear();
+      mc.isReflectionLoading.value = false;
+    }
+
     currentUser.value = null;
     isLoggedIn.value = false;
   }

@@ -1,13 +1,18 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const dbService = require('../services/dbService');
 
 const SALT_ROUNDS = 12;
 
-const generateToken = (id) => {
+const generateAccessToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+        expiresIn: '1h',
     });
+};
+
+const generateRefreshToken = () => {
+    return crypto.randomBytes(64).toString('hex');
 };
 
 const register = async (req, res) => {
@@ -42,13 +47,18 @@ const register = async (req, res) => {
             password: hashedPassword,
         });
 
+        // Generate and store refresh token
+        const refreshToken = generateRefreshToken();
+        await dbService.updateRefreshToken(user.id, refreshToken);
+
         return res.status(201).json({
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
             },
-            token: generateToken(user.id),
+            token: generateAccessToken(user.id),
+            refreshToken,
         });
     } catch (error) {
         // Handle race condition: UNIQUE constraint violation
@@ -82,13 +92,18 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
+        // Generate and store refresh token
+        const refreshToken = generateRefreshToken();
+        await dbService.updateRefreshToken(user.id, refreshToken);
+
         return res.json({
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
             },
-            token: generateToken(user.id),
+            token: generateAccessToken(user.id),
+            refreshToken,
         });
     } catch (error) {
         console.error('Login error:', error);
@@ -96,4 +111,33 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const refresh = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({ message: 'Refresh token is required' });
+        }
+
+        const user = await dbService.findUserByRefreshToken(refreshToken);
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        // Rotate refresh token for security
+        const newRefreshToken = generateRefreshToken();
+        await dbService.updateRefreshToken(user.id, newRefreshToken);
+
+        return res.json({
+            token: generateAccessToken(user.id),
+            refreshToken: newRefreshToken,
+        });
+    } catch (error) {
+        console.error('Token refresh error:', error);
+        return res.status(500).json({ message: 'An internal error occurred' });
+    }
+};
+
+module.exports = { register, login, refresh };
+
