@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
-const path = require('path');
+const path = require('node:path');
 
 const DB_PATH = path.join(__dirname, '../../database.sqlite');
 
@@ -53,6 +53,15 @@ async function initDB() {
             UPDATE moods SET updated_at = datetime('now') WHERE id = NEW.id;
         END;
     `);
+
+    // Migration: add refreshToken column if it doesn't exist
+    try {
+        await db.exec('ALTER TABLE users ADD COLUMN refreshToken TEXT;');
+    } catch (error) {
+        if (!error.message?.includes('duplicate column name')) {
+            console.warn('Migration note:', error.message);
+        }
+    }
 
     dbInstance = db;
     return db;

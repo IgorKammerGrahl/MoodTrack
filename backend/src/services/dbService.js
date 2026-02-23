@@ -1,11 +1,11 @@
-const crypto = require('crypto');
+const crypto = require('node:crypto');
 const { getDB } = require('../config/db');
 
-const ALLOWED_TABLES = ['users', 'moods'];
+const ALLOWED_TABLES = new Set(['users', 'moods']);
 
 class DBService {
     _validateTable(collection) {
-        if (!ALLOWED_TABLES.includes(collection)) {
+        if (!ALLOWED_TABLES.has(collection)) {
             throw new Error(`Invalid table: ${collection}`);
         }
     }

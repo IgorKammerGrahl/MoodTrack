@@ -13,6 +13,7 @@ import '../../widgets/mood_emoji_button.dart';
 import '../../widgets/timeline_horizontal.dart';
 import '../chat/ai_chat_screen.dart';
 import '../insights/insights_screen.dart';
+import 'main_shell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -286,14 +287,26 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: MoodButton(
                 label: 'Chat IA',
-                onPressed: () => Get.to(() => const AIChatScreen()),
+                onPressed: () {
+                  if (Get.isRegistered<MainShellController>()) {
+                    Get.find<MainShellController>().changeTab(1);
+                  } else {
+                    Get.to(() => const AIChatScreen());
+                  }
+                },
               ),
             ),
             SizedBox(width: 16.w),
             Expanded(
               child: MoodButton(
                 label: 'Insights',
-                onPressed: () => Get.to(() => const InsightsScreen()),
+                onPressed: () {
+                  if (Get.isRegistered<MainShellController>()) {
+                    Get.find<MainShellController>().changeTab(2);
+                  } else {
+                    Get.to(() => const InsightsScreen());
+                  }
+                },
               ),
             ),
           ],

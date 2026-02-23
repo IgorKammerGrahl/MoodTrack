@@ -8,26 +8,29 @@ import '../chat/ai_chat_screen.dart';
 import '../insights/insights_screen.dart';
 import '../settings/settings_screen.dart';
 
+class MainShellController extends GetxController {
+  final RxInt currentIndex = 0.obs;
+
+  void changeTab(int index) {
+    currentIndex.value = index;
+  }
+}
+
 /// Main navigation shell with IndexedStack for persistent screen state.
-class MainShell extends StatefulWidget {
+class MainShell extends StatelessWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    HomeScreen(),
-    AIChatScreen(),
-    InsightsScreen(),
-    SettingsScreen(),
-  ];
-
-  @override
   Widget build(BuildContext context) {
+    final controller = Get.put(MainShellController());
+
+    final List<Widget> pages = const [
+      HomeScreen(),
+      AIChatScreen(),
+      InsightsScreen(),
+      SettingsScreen(),
+    ];
+
     return Scaffold(
       body: Column(
         children: [
@@ -36,31 +39,39 @@ class _MainShellState extends State<MainShell> {
 
           // Content with IndexedStack
           Expanded(
-            child: IndexedStack(index: _currentIndex, children: _pages),
+            child: Obx(
+              () => IndexedStack(
+                index: controller.currentIndex.value,
+                children: pages,
+              ),
+            ),
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat IA',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Insights',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Ajustes'),
-        ],
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-        },
+      bottomNavigationBar: Obx(
+        () => BottomNavigationBar(
+          currentIndex: controller.currentIndex.value,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textSecondary,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              label: 'Chat IA',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Insights',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Ajustes',
+            ),
+          ],
+          onTap: controller.changeTab,
+        ),
       ),
     );
   }

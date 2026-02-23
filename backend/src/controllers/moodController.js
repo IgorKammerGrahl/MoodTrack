@@ -62,8 +62,8 @@ async function processReflection(moodId, moodLevel, note) {
         console.error(`AI reflection failed for mood ${moodId}:`, err.message);
         try {
             await dbService.updateMoodReflectionStatus(moodId, 'failed');
-        } catch (dbErr) {
-            console.error(`Failed to update reflection status for mood ${moodId}:`, dbErr.message);
+        } catch (error_) {
+            console.error(`Failed to update reflection status for mood ${moodId}:`, error_.message);
         }
     }
 }

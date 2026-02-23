@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+const crypto = require('node:crypto');
 const dbService = require('../services/dbService');
 
 const SALT_ROUNDS = 12;
@@ -62,7 +62,7 @@ const register = async (req, res) => {
         });
     } catch (error) {
         // Handle race condition: UNIQUE constraint violation
-        if (error.message && error.message.includes('UNIQUE constraint failed')) {
+        if (error.message?.includes('UNIQUE constraint failed')) {
             return res.status(400).json({ message: 'User already exists' });
         }
         console.error('Registration error:', error);

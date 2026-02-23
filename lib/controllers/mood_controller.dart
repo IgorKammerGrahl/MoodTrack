@@ -68,18 +68,21 @@ class MoodController extends GetxController {
       return;
     }
 
-    // Get unique days sorted descending
+    // Get unique days sorted descending using local time to get the correct day,
+    // then normalize to UTC to avoid DST issues when calculating differences
     final uniqueDays =
         entries
-            .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+            .map((e) {
+              final local = e.date.toLocal();
+              return DateTime.utc(local.year, local.month, local.day);
+            })
             .toSet()
             .toList()
           ..sort((a, b) => b.compareTo(a));
 
     final today = DateTime.now();
-    final todayNorm = DateTime(today.year, today.month, today.day);
+    final todayNorm = DateTime.utc(today.year, today.month, today.day);
 
-    // Streak must include today or yesterday
     if (uniqueDays.isEmpty) {
       currentStreak.value = 0;
       return;
