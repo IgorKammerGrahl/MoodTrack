@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import 'storage_service.dart';
+import 'auth_service.dart';
 
 class ApiService {
   final String baseUrl = AppConstants.baseUrl;
@@ -107,9 +108,8 @@ class ApiService {
       debugPrint('Token refresh failed: $e');
       // Refresh failed — force logout
       try {
-        final authService = Get.find<dynamic>(tag: null);
-        if (authService != null) {
-          // Will be caught by GetX reactive UI
+        if (Get.isRegistered<AuthService>()) {
+          Get.find<AuthService>().logout();
         }
       } catch (_) {}
       rethrow;

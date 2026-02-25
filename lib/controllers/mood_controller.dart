@@ -5,6 +5,7 @@ import '../models/mood_entry.dart';
 import '../repositories/mood_repository.dart';
 import '../repositories/reflection_repository.dart';
 import '../services/auth_service.dart';
+import '../domain/streak_calculator.dart';
 
 const _uuid = Uuid();
 
@@ -19,6 +20,8 @@ class MoodController extends GetxController {
 
   // New Entry State
   final RxInt selectedMoodLevel = 0.obs;
+  final RxBool isEditingEntry = false.obs;
+  final RxList<String> selectedTags = <String>[].obs;
   final noteController = TextEditingController();
 
   @override
@@ -63,49 +66,7 @@ class MoodController extends GetxController {
 
   /// Compute the current daily streak from recent entries.
   void _updateStreak(List<MoodEntry> entries) {
-    if (entries.isEmpty) {
-      currentStreak.value = 0;
-      return;
-    }
-
-    // Get unique days sorted descending using local time to get the correct day,
-    // then normalize to UTC to avoid DST issues when calculating differences
-    final uniqueDays =
-        entries
-            .map((e) {
-              final local = e.date.toLocal();
-              return DateTime.utc(local.year, local.month, local.day);
-            })
-            .toSet()
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
-
-    final today = DateTime.now();
-    final todayNorm = DateTime.utc(today.year, today.month, today.day);
-
-    if (uniqueDays.isEmpty) {
-      currentStreak.value = 0;
-      return;
-    }
-
-    final firstDay = uniqueDays.first;
-    final diffFromToday = todayNorm.difference(firstDay).inDays;
-    if (diffFromToday > 1) {
-      currentStreak.value = 0;
-      return;
-    }
-
-    int streak = 1;
-    for (int i = 1; i < uniqueDays.length; i++) {
-      final diff = uniqueDays[i - 1].difference(uniqueDays[i]).inDays;
-      if (diff == 1) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    currentStreak.value = streak;
+    currentStreak.value = StreakCalculator.calculateStreak(entries);
   }
 
   Future<void> addEntry() async {
@@ -116,11 +77,18 @@ class MoodController extends GetxController {
 
     isLoading.value = true;
     try {
+      // Compila as tags e nota em uma string única (formato invisível pro usuário, útil pra IA)
+      String finalNote = noteController.text.trim();
+      if (selectedTags.isNotEmpty) {
+        final tagsStr = '[Tags: ${selectedTags.join(', ')}]';
+        finalNote = finalNote.isEmpty ? tagsStr : '$tagsStr\n$finalNote';
+      }
+
       final baseEntry = MoodEntry(
         id: _uuid.v4(),
         date: DateTime.now(),
         moodLevel: selectedMoodLevel.value,
-        note: noteController.text,
+        note: finalNote,
       );
 
       final isUpdate = todayEntries.isNotEmpty;
@@ -131,6 +99,8 @@ class MoodController extends GetxController {
       await fetchRecentEntries();
 
       selectedMoodLevel.value = 0;
+      isEditingEntry.value = false;
+      selectedTags.clear();
       noteController.clear();
       isLoading.value = false;
 
@@ -158,6 +128,14 @@ class MoodController extends GetxController {
 
   void selectMood(int level) {
     selectedMoodLevel.value = level;
+  }
+
+  void toggleTag(String tag) {
+    if (selectedTags.contains(tag)) {
+      selectedTags.remove(tag);
+    } else {
+      selectedTags.add(tag);
+    }
   }
 
   Future<void> deleteEntry(String id) async {

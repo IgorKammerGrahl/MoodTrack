@@ -4,7 +4,7 @@ import 'package:moodtrack/models/mood_entry.dart';
 
 void main() {
   group('StreakCalculator', () {
-    MoodEntry _entry(DateTime date) =>
+    MoodEntry entry(DateTime date) =>
         MoodEntry(id: date.toIso8601String(), date: date, moodLevel: 3);
 
     test('returns 0 for empty list', () {
@@ -12,20 +12,20 @@ void main() {
     });
 
     test('returns 1 for a single entry today', () {
-      final entries = [_entry(DateTime.now())];
+      final entries = [entry(DateTime.now())];
       expect(StreakCalculator.calculateStreak(entries), 1);
     });
 
     test('returns 1 for a single entry yesterday', () {
       final entries = [
-        _entry(DateTime.now().subtract(const Duration(days: 1))),
+        entry(DateTime.now().subtract(const Duration(days: 1))),
       ];
       expect(StreakCalculator.calculateStreak(entries), 1);
     });
 
     test('returns 0 for a single entry 2 days ago (streak broken)', () {
       final entries = [
-        _entry(DateTime.now().subtract(const Duration(days: 2))),
+        entry(DateTime.now().subtract(const Duration(days: 2))),
       ];
       expect(StreakCalculator.calculateStreak(entries), 0);
     });
@@ -33,10 +33,10 @@ void main() {
     test('counts consecutive days correctly', () {
       final now = DateTime.now();
       final entries = [
-        _entry(now),
-        _entry(now.subtract(const Duration(days: 1))),
-        _entry(now.subtract(const Duration(days: 2))),
-        _entry(now.subtract(const Duration(days: 3))),
+        entry(now),
+        entry(now.subtract(const Duration(days: 1))),
+        entry(now.subtract(const Duration(days: 2))),
+        entry(now.subtract(const Duration(days: 3))),
       ];
       expect(StreakCalculator.calculateStreak(entries), 4);
     });
@@ -44,11 +44,11 @@ void main() {
     test('stops at gap', () {
       final now = DateTime.now();
       final entries = [
-        _entry(now),
-        _entry(now.subtract(const Duration(days: 1))),
+        entry(now),
+        entry(now.subtract(const Duration(days: 1))),
         // gap at day 2
-        _entry(now.subtract(const Duration(days: 3))),
-        _entry(now.subtract(const Duration(days: 4))),
+        entry(now.subtract(const Duration(days: 3))),
+        entry(now.subtract(const Duration(days: 4))),
       ];
       expect(StreakCalculator.calculateStreak(entries), 2);
     });
@@ -56,9 +56,9 @@ void main() {
     test('handles multiple entries on the same day', () {
       final now = DateTime.now();
       final entries = [
-        _entry(now),
-        _entry(now.subtract(const Duration(hours: 3))), // same day
-        _entry(now.subtract(const Duration(days: 1))),
+        entry(now),
+        entry(now.subtract(const Duration(hours: 3))), // same day
+        entry(now.subtract(const Duration(days: 1))),
       ];
       expect(StreakCalculator.calculateStreak(entries), 2);
     });
@@ -67,9 +67,9 @@ void main() {
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
       final entries = [
-        _entry(yesterday),
-        _entry(yesterday.subtract(const Duration(days: 1))),
-        _entry(yesterday.subtract(const Duration(days: 2))),
+        entry(yesterday),
+        entry(yesterday.subtract(const Duration(days: 1))),
+        entry(yesterday.subtract(const Duration(days: 2))),
       ];
       expect(StreakCalculator.calculateStreak(entries), 3);
     });

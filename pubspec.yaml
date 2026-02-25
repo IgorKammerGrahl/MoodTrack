@@ -23,7 +23,6 @@ dependencies:
   intl: ^0.18.1
   http: ^1.6.0
   google_fonts: ^6.3.2
-  provider: ^6.1.5+1
 
   # State Management
   get: ^4.6.6
